@@ -1,0 +1,112 @@
+.post-editor 
+{
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+    text-align: left;
+    max-width: 800px;
+    
+    .editor-box
+    {
+        display: flex;
+        align-items: flex-start;
+        overflow: hidden;
+
+        .user-profile-picture
+        {
+            display: block;
+            width: 40px;
+            height: 40px;
+            margin:0.25rem;
+            overflow: hidden;
+            border-radius: 5px;
+
+            // display: inline-block;
+            // border-radius: 20px;
+        }
+
+        .textbox
+        {
+            display: block;
+            flex-grow: 1;
+            margin:0.25rem;
+    
+            .textbox-message
+            {
+                display: flex;
+                flex-grow: 1;
+                background-color: rgb(240, 242, 245);
+                border-radius: 10px;
+                align-items: center;
+                line-height: 24px;
+                box-sizing: border-box;
+                color: rgb(28, 30, 33);
+                cursor: pointer;
+                overflow: hidden;
+            }
+            
+            .textbox-message:hover
+            {
+                background-color: rgb(235, 237, 240);
+            }
+        }
+
+        .actions
+        {
+            align-self: flex-start;
+            display: flex;
+            margin:0.5rem;
+        }
+
+        .actions:hover
+        {
+            background-color: #ddd;
+        }
+    }
+
+    
+
+    .actions
+    {
+        position: relative;
+        display: flex;
+        width: 100%;
+        overflow: hidden;
+        flex-direction: row;
+        padding: 0.25rem;
+        font-size: 0.9rem;
+        user-select: none;
+        
+        .action
+        {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            flex-basis: 0;
+            min-width: 0;
+            padding: 0.5rem;
+            text-align: center;
+            border-radius: 5px;
+            user-select: none;
+            cursor: pointer;
+
+            span, i 
+            {
+                user-select: none;
+                align-items: center;
+            }
+        }
+
+        .action:hover
+        {
+            background-color: #eee;
+        }
+
+        .action:active
+        {
+            background-color: #eef;
+        }
+    }
+}

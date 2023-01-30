@@ -1,0 +1,39 @@
+$gray: #CCC;
+$lightgray: #DEDEDE;
+
+nav
+{
+    display: block;
+
+    ul
+    {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        width:100%;
+
+        li
+        {
+            list-style: none;
+            display: block;
+            width: 100%;
+            overflow: hidden;
+            text-align: left;
+
+            a 
+            {
+                display: flex;
+                width:100%;
+                border-radius: 5px;
+                padding:0.5rem;
+                align-items: center;
+                text-decoration: none;
+            }
+
+            a:hover
+            {
+                background: $lightgray;
+            }
+        }
+    }
+}

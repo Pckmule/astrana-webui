@@ -1,0 +1,14 @@
+$max-video-height: 280px;
+
+.video 
+{
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    background: #EEE;
+    width:100%;
+    height: $max-video-height;
+    align-items: center;
+    text-align:center;
+}

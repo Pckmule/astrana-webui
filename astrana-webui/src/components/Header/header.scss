@@ -1,0 +1,59 @@
+
+header
+{
+  .wrapper {
+    font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  button + button {
+    margin-left: 10px;
+  }
+  
+  h1 {
+    font-weight: 900;
+    font-size: 20px !important;
+    line-height: 1;
+    margin: 6px 0 6px 10px;
+    display: inline-block;
+    vertical-align: top;
+  }
+  
+  .main-nav
+  {
+      display: inline-block;
+
+    .nav-item
+    {
+      display: inline-block;
+      overflow: hidden;
+      padding:3px;
+      margin:0px 3px;
+      width:32px;
+      height:32px;
+      background-color: #fff;
+      border-radius: 100%;
+      text-align: center;
+      border:none;
+
+      .icon
+      {
+        font-size: 1.1rem;
+      }
+    }
+
+    .instance-user
+    {
+      display: inline-block;
+      overflow: hidden;
+      width:32px;
+      height:32px;
+      margin:0px 3px;
+      border:1px solid #fff;
+    }
+  }
+}

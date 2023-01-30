@@ -1,0 +1,89 @@
+@import "./../../../src/themes/constants.scss";
+
+.setup-form
+{
+    margin: 0;
+}
+
+.form-section
+{
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-width: 1px;
+    border-top-left-radius: .25rem;
+    border-top-right-radius: .25rem;
+    background-color: white;
+
+    .form-section-progress
+    {
+        margin-bottom: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .form-section-head
+    {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+
+        h1, h2, h3, h4, h5, h6
+        {
+            font-size: 100%;
+            font-weight: bold;
+            padding: 0;
+            margin: 0;
+        }
+
+        .advanced-options
+        {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+    }
+    
+    .form-section-body
+    {
+        .form-field
+        {
+            margin-bottom: 0.75rem;
+        }
+        
+        .textblock
+        {
+            display: block;
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            overflow-y: auto;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgb(220,220,220);
+            font-size: 0.75rem;
+        }
+    }
+
+    .form-section-foot
+    {
+        margin-top: 1.5rem;
+
+        .btn-back
+        {
+            color: rgb(180,180,180);
+            border: 1px solid rgb(245,245,245);
+        }
+
+        .btn-back:hover
+        {
+            color: rgb(120,120,120);
+            background: rgb(245,245,245);
+        }
+    }    
+}
+
+.database-logo
+{
+    width: 100%;
+    border: 1px solid $image-border-color;
+    background-color: rgb(250,250,250);
+}

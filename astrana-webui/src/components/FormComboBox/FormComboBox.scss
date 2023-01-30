@@ -1,0 +1,135 @@
+.comboBox 
+{
+  position: relative;
+  width: 200px;
+  height: 40px;
+
+  .input-group
+  {
+    border-radius: 0.25rem ;
+    border:none;
+    
+    .input-group-text
+    {
+      border: 1px solid #ced4da;
+      background-color: transparent;
+      border-right: none;
+
+      img
+      {
+        width:100%;
+        max-width: 24px;
+      }
+    }  
+
+    input
+    {
+      border-left: none;
+    }
+  }
+
+  .input-group:focus-within
+  {
+    color: #212529;
+    background-color: #fff;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
+    
+    .input-group-text
+    {
+      border-color: #86b7fe;
+    }  
+  }
+
+  .comboBoxInput 
+  {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 1px solid #c1bcbc;
+    border-radius: 5px;
+    background-color: inherit;
+    color: inherit
+  }
+
+  .comboBoxInput:focus 
+  {   
+    box-shadow: none;
+    outline: 0 none;
+  }
+
+  .comboBoxPopover 
+  {
+    position: absolute;
+    z-index: 2000;
+    overflow: auto;
+    width: 100%;
+    color: inherit;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    background-color: white;
+
+    .comboBoxList 
+    {
+      margin: 0;
+      padding: 0;
+      padding-top: 5px;
+      text-align: center;
+      border-radius: 5px;
+      text-align: left;
+      overflow-y: auto;
+      list-style-type: none;
+
+      .comboBoxOption 
+      {
+        list-style-type: none;
+        padding: 0.5em;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+
+        img.icon
+        {
+          width:100%;
+          max-width: 24px;
+          margin-right:10px;
+        }
+      }
+
+      .comboBoxOption.highlight
+      {
+        background-color: #bee3f8;
+      }
+
+      .comboBoxOption.selected
+      {
+        background-color: #63b3ed;
+      }
+    }
+
+    .rightElement 
+    {
+      position: absolute;
+      right: 0;
+      top: 55%;
+      transform: translate(0, -50%);
+      margin-right: 5px;
+    }
+
+    .leftElement 
+    {
+      position: absolute;
+      left: 0;
+      top: 55%;
+      transform: translate(0, -50%);
+      margin-left: 8px;
+    }
+  }
+}
+
+.comboBox:focus 
+{   
+  border-color: rgba(126, 239, 104, 0.8);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(126, 239, 104, 0.6);
+  outline: 0 none;
+}

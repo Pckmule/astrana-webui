@@ -1,0 +1,238 @@
+$max-post-attachment-height: 300px;
+
+.feed-content-item 
+{
+    position: relative;
+    display: block;
+    text-align: left;
+    background: #FFF;
+
+    .feed-content-item-content
+    {
+        position: relative;
+        display: block;
+
+        .feed-content-item-header
+        {
+            display: flex;
+            align-items: flex-start;
+            overflow: hidden;
+
+            .profile-picture
+            {
+                display: block;
+                width: 40px;
+                height: 40px;
+                margin:0.5rem;
+                overflow: hidden;
+                border-radius: 5px;
+                background-color: rgb(240,240,240);
+            }
+
+            .feed-content-item-details
+            {
+                display: block;
+                flex-grow: 1;
+                margin:0.5rem;
+
+                h4 {
+                    font-size: 1rem;
+                    margin-bottom: 2px;
+                    padding-bottom: 0;
+                }
+                
+                .txt-sm
+                {
+                    font-size:0.75rem;   
+                }
+
+                .timestamp a
+                {
+                    font-weight: normal;
+                }
+            }
+
+            .actions
+            {
+                align-self: flex-start;
+                display: flex;
+                margin:0.5rem;
+            }
+
+            .actions:hover
+            {
+                background-color: #ddd;
+            }
+        }
+
+        .feed-content-item-attachment
+        {
+            position: relative;
+            display: flex;
+            width: 100%;
+            overflow: hidden;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+            background: #eee;
+            border-top:1px solid #ddd;
+            user-select: none;
+        }
+
+        .feed-content-item-interactions
+        {
+            position: relative;
+            display: block;
+            width: 100%;
+            overflow: hidden;
+            border-top:1px solid #ddd;
+
+            .interactions-details
+            {
+                position: relative;
+                display: flex;
+                width: 100%;
+                overflow: hidden;
+                padding: 0.25rem;
+                font-size: 0.8rem;
+                user-select: none;
+                
+                .count
+                {
+                    position: relative;
+                    display: block;
+                    align-items: center;
+                    flex-basis: 0;
+                    min-width: 0;
+                    padding: 0.5rem;
+                    user-select: none;
+                }
+
+                .count.reactions-count
+                {
+                    align-self: flex-start;
+                    flex: auto;
+                    user-select: none;
+                }
+
+                .comments-count
+                {
+                    display: block;
+                    align-self: flex-end;
+                    text-align: right;
+                    flex: initial;
+                    user-select: none;
+                }
+
+                .shares-count
+                {
+                    display: block;
+                    align-self: flex-end;
+                    text-align: right;
+                    flex: initial;
+                    user-select: none;
+                }
+            }
+
+            .actions
+            {
+                position: relative;
+                display: flex;
+                width: 100%;
+                overflow: hidden;
+                flex-direction: row;
+                padding: 0.25rem;
+                font-size: 0.9rem;
+                user-select: none;
+                
+                .action
+                {
+                    position: relative;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    flex-grow: 1;
+                    flex-basis: 0;
+                    min-width: 0;
+                    padding: 0.5rem;
+                    text-align: center;
+                    border-radius: 5px;
+                    user-select: none;
+                    cursor: pointer;
+
+                    span, i 
+                    {
+                        user-select: none;
+                        align-items: center;
+                    }
+                }
+
+                .action:hover
+                {
+                    background-color: #eee;
+                }
+
+                .action:active
+                {
+                    background-color: #eef;
+                }
+            }
+        }
+    }
+    
+    .skeleton 
+    {
+        display: inline-block;
+        height: 1.1em;
+        line-height: 1.2;
+        position: relative;
+        overflow: hidden;
+        background-color: rgb(245,245,245);
+        border-radius: 3px;
+        margin:0;
+        margin-right:1%;
+        
+        &::after {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(90deg, rgba(rgb(232,232,232), 0) 0, rgba(rgb(232,232,232), 0.2) 20%, rgba(rgb(232,232,232), 0.5) 60%, rgba(rgb(232,232,232), 0));
+            animation: shimmer 2s infinite;
+            content: '';
+        }
+        
+        @keyframes shimmer {
+            100% {
+            transform: translateX(100%);
+            }
+        }
+    }
+
+    .skeleton.x2
+    {
+        height: 1.8em;
+    }
+
+    .w10{ width:9%; }
+    .w15{ width:14%; }
+    .w20{ width:19%; }
+    .w25{ width:24%; }
+    .w30{ width:29%; }
+    .w35{ width:34%; }
+    .w40{ width:39%; }
+    .w45{ width:44%; }
+    .w50{ width:49%; }
+    .w55{ width:54%; }
+    .w60{ width:59%; }
+    .w65{ width:64%; }
+    .w70{ width:69%; }
+    .w75{ width:74%; }
+    .w80{ width:79%; }
+    .w85{ width:84%; }
+    .w90{ width:89%; }
+    .w95{ width:94%; }
+    .w100{ width:99%; }
+}

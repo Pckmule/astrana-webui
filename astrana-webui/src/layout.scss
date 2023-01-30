@@ -1,0 +1,42 @@
+body
+{
+    margin:0;
+    padding:0;
+
+    .ltr{
+        direction: ltr;
+    }
+
+    .rtl
+    {
+        direction: rtl;
+    }
+
+    .page-content
+    {
+        margin-top:70px;
+
+        div.drawer-l
+        {
+            display:block;
+            height: 100vh;
+        }
+        
+        div.main-content
+        {
+            display:block;
+        
+            main
+            {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        
+        div.drawer-r
+        {
+            display:block;
+            height: 100vh;
+        }
+    }
+}

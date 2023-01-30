@@ -1,0 +1,57 @@
+.profile-card
+{
+  display:block;
+  overflow: hidden;
+  width:100%;
+  background-color: #fff;
+  text-align: center;
+
+  .profile-card-body
+  {
+    padding: 0 0 15px 0;
+
+    .details
+    {
+      .profile-bg-image 
+      {
+        background-position: center;
+        background-size: cover;
+        background-color: #fefeff;
+        display: block;
+        height: 70px;
+        width: 100%;
+      }
+    
+      .profile-picture
+      {
+        width:64px;
+        height:64px;
+        overflow: hidden;
+        margin: -34px auto 12px;
+        border:1px solid #fff;
+      }
+
+      .name{
+        font-size: 1.2em;
+      }
+
+      .description{
+        font-size: 0.9em;
+      }
+    }
+    
+    .items
+    {
+      border-top:1px solid #CCC;
+    }
+  }
+}
+
+.profile-card.skeleton
+{
+  .profile-card-head,
+  .profile-card-body
+  {
+    visibility: hidden;
+  }
+}
