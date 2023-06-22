@@ -1,21 +1,49 @@
 import _ from 'lodash';
 
+import UserSlugService from './UserSlugService';
+
 export default function UrlBuilderService() 
 {
-    const profileUrl = (sectionName?: string | undefined, profileId?: string | undefined) =>
+    const userSlugService = UserSlugService();
+
+    const getSlug = (text: string) =>
+    {        
+        if(!text || _.isEmpty(text?.trim()))
+          return text;
+
+        return text?.trim().replace(new RegExp(" ", "g"), "-").toLowerCase();
+    }
+    
+    const profileUrl = (sectionName?: string | undefined, profileId?: string | undefined, useSlug?: boolean | undefined) =>
     { 
-        let url = "/profile"
+        const urlParts = ["profile"];
 
         if(profileId)
-          url += "/" + profileId;
+        {
+            const userSlug = userSlugService.getSlug(profileId);
+            
+            userSlug ? urlParts.push(userSlug) : urlParts.push(profileId);
+        }
 
-        if(!_.isEmpty(sectionName))
-          url += "/" + sectionName;
+        if(sectionName && !_.isEmpty(sectionName))
+          urlParts.push(sectionName);
 
-        return url;
+        return "/" + urlParts.join("/");
+    }
+    
+    const settingsUrl = (categoryName?: string | undefined) =>
+    { 
+        const urlParts = ["settings"];
+
+        if(categoryName && !_.isEmpty(categoryName?.trim()))
+          urlParts.push(getSlug(categoryName));
+
+        return "/" + urlParts.join("/");
     }
     
     return {
-      profileUrl
+      getSlug,
+      profileUrl,
+      settingsUrl
     };
 }
