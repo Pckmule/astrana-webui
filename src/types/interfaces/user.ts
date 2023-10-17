@@ -5,8 +5,13 @@ export interface IUserInfo {
     firstName: string;
     fullName: string;
     gender: number;
-    profilePictureUrl: string;
-    profileCoverPicture?: string;
+    profilePicture: IPicture;
+    coverPicture?: IPicture;
     description?: string;
     websiteUrl?: string;
+}
+
+export interface IPicture {
+    caption?: string;
+    location: string;
 }

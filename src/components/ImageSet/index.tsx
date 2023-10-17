@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IImage } from "./../../types/objects/image";
+import { IImage } from "./../../types/interfaces/image";
 
 import { Image } from './../../components/Image';
 

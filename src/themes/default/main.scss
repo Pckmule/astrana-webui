@@ -1,0 +1,27 @@
+@import "./../../../src/themes/constants.scss";
+@import "./../../../src/themes/normalize.scss";
+@import "./../../../src/themes/bootstrap-overrides.scss";
+@import "./../../../src/themes/bootstrap-extensions.scss";
+@import "./../../../src/themes/ui-elements.scss";
+@import "./stencil.scss";
+
+.fw-n
+{
+  font-weight: normal;
+}
+
+body
+{
+  background: #efefef;
+
+  header
+  {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: block;
+    width: 100%;
+    z-index: 10000;
+    background: $astrana-primary-color;
+  }
+}

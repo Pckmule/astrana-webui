@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 
-import { IApplicationSettings } from './../../types/objects/applicationSettings';
-import { IUserInfo } from './../../types/interfaces/user';
+import { ReadyStatus } from '../../types/enums/readyStatus';
+import { DisplayMode } from '../../types/enums/displayMode';
 
+import SettingsService from './../../services/SettingsService';
 import TranslationService from './../../services/TranslationService';
 import UserService from '../../services/UserService';
 
@@ -11,33 +12,46 @@ import { LeftDrawerNavigationMenu } from "./../../components/LeftDrawerNavigatio
 
 import './NewsReaderPage.scss';
 
-interface NewsReaderPageProps {
-  settings: IApplicationSettings;
-  user: IUserInfo;
-}
-
-export function NewsReaderPage({ settings, user }: NewsReaderPageProps) 
+export function NewsReaderPage(props: {}) 
 {
-    const [translations, setTranslations] = React.useState<any>({ __loading: true });
+    const [loadStatus, setLoadStatus] = React.useState<ReadyStatus>(ReadyStatus.Loading);
 
-    const [currentUserSettings, setCurrentUserSettings] = React.useState<any>({
-        languageCode: "zh"
-    });
+    const [translations, setTranslations] = React.useState<any>({ __loading: true });
+    const [currentUserSettings, setCurrentUserSettings] = React.useState<any>({ __loading: true });
     
     const [currentUserInformation, setCurrentUserInformation] = React.useState<any>({});
 
+    const settingsService = SettingsService();
     const trxService = TranslationService();
     const userService = UserService();
     
     const loadInitialData = async () => 
     {
-        setCurrentUserInformation(await userService.getProfile());
-        
-        setCurrentUserSettings({
-            languageCode: "zh"
+        await userService.getProfile().then(async (response: any | undefined) => 
+        {
+            setCurrentUserInformation(response);
+            
+            await settingsService.getAll().then(async (response: any | undefined) => 
+            {
+                setCurrentUserSettings(response);
+
+                await trxService.getTranslations(settingsService.findValue(response, "Language Code") ?? "EN").then((response: any | undefined) => 
+                {
+                    setTranslations(response);
+                    
+                    setLoadStatus(ReadyStatus.Loaded);
+                })
+                .catch((error: Error | undefined) => {
+                    console.log(error);
+                });
+            })
+            .catch((error: Error | undefined) => {
+                console.log(error);
+            });
+        })
+        .catch((error: Error | undefined) => {
+            console.log(error);
         });
-        
-        setTranslations(await trxService.getTranslations(currentUserSettings.languageCode));
     };
 
     useEffect(() => {
@@ -45,18 +59,18 @@ export function NewsReaderPage({ settings, user }: NewsReaderPageProps)
     }, []);
 
     const menuItems = [
-      { text: trxService.trx(translations, "nav_menuitem_community_feed"), href: "", iconName: "mdi-card-text-outline" },
-      { text: trxService.trx(translations, "nav_menuitem_pin_boards"), href: "pinboards", iconName: "mdi-view-dashboard" },
-      { text: trxService.trx(translations, "nav_menuitem_news_reader"), href: "newsfeed", iconName: "mdi-newspaper-variant-outline" }, 
-      { text: trxService.trx(translations, "nav_menuitem_profile"), href: "profile", iconName: "mdi-account-circle" }
+      { text: trxService.trx(translations, "nav_menuitem_community_feed"), href: "", iconName: "card-text-outline" },
+      { text: trxService.trx(translations, "nav_menuitem_pin_boards"), href: "pinboards", iconName: "view-dashboard" },
+      { text: trxService.trx(translations, "nav_menuitem_news_reader"), href: "newsfeed", iconName: "newspaper-variant-outline" }, 
+      { text: trxService.trx(translations, "nav_menuitem_profile"), href: "profile", iconName: "account-circle" }
     ];
 
-    const isPageReady = translations.__loading ? "loading" : "ready";
-    const displayMode = !isPageReady ? "skeleton" : "normal";
+    const isPageReady = loadStatus !== ReadyStatus.Loaded ? ReadyStatus.Loading : ReadyStatus.Ready;
+    const displayMode = !isPageReady ? DisplayMode.Stencil : DisplayMode.Normal;
 
     return(
       <React.Fragment>
-        <Header displayMode={displayMode} user={user} />
+        <Header displayMode={displayMode} translations={translations} user={currentUserInformation} />
     
         <div className="container-fluid page-content">
           <div className="row g-0">

@@ -1,14 +1,31 @@
-$max-video-height: 280px;
-
 .video 
 {
     position: relative;
-    display: flex;
+    display: block;
     overflow: hidden;
     user-select: none;
-    background: #EEE;
-    width:100%;
-    height: $max-video-height;
-    align-items: center;
-    text-align:center;
+    background: #000;
+
+    img 
+    {
+        display: block;
+        width:100%;
+    }
+}
+
+
+.stencil
+{
+	.video 
+	{
+		img
+        {
+            visibility: hidden;
+        }
+
+        .video-text-overlay
+        {
+            visibility: hidden;
+        }
+	}
 }

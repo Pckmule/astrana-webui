@@ -1,5 +1,13 @@
 @import "./../../../src/themes/constants.scss";
 
+.setup-complete-message
+{
+    font-size: 1.5rem;
+    padding: 1.25rem;
+    margin-top: 3rem;
+    background: rgb(255,255,255,0.75);
+}
+
 .setup-form
 {
     margin: 0;

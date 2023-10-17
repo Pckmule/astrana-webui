@@ -1,0 +1,77 @@
+@import "./../../../src/themes/constants.scss";
+
+$gray: #CCC;
+
+div.notifications-list
+{
+    display: block;
+    clear: both;
+    width:100%;
+
+    ul
+    {
+        display: block;
+        width:100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+
+        li.notification-item
+        {
+            display: flex;
+            overflow: hidden;
+            list-style: none;
+            align-items: center;
+            border-bottom: 1px solid $border-color-lightgray;
+
+            span.placeholder
+            {
+                display: flex;
+                width:100%;
+                border-radius: 5px;
+                padding:0.35rem 0.5rem;
+            }
+
+            div.notification
+            {
+                display: flex;
+                width:100%;
+                padding:0.35rem 0.5rem;
+                align-items: center;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            div.notification:hover
+            {
+                background: $color-lightergray;
+            }
+        }
+        
+        li:last-child
+        {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+    }
+}
+
+.stencil
+{
+    .notifications-list
+    {
+        ul
+        {
+            li
+            {
+                background: rgb(255,255,255);
+
+                .placeholder
+                {
+                    width: 100%;
+                }
+            }
+        }
+    }
+}

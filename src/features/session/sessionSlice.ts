@@ -1,17 +1,25 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState, AppThunk } from '../../app/store';
+
 import AuthenticationService  from './../../services/AuthenticationService';
+
+export enum SessionStatus
+{
+  Idle,
+  Loading,
+  Failed
+}
 
 export interface ISessionState {
   value: number;
   apiAuthorizationToken: string;
-  status: 'idle' | 'loading' | 'failed';
+  status: SessionStatus;
 }
 
 const initialState: ISessionState = {
   value: 0,
   apiAuthorizationToken: "not set",
-  status: 'idle',
+  status: SessionStatus.Idle,
 };
 
 export const sessionSlice = createSlice({
@@ -19,7 +27,8 @@ export const sessionSlice = createSlice({
   initialState,
   
   reducers: {
-    setAuthToken: (state, action: PayloadAction<string>) => {
+    setAuthToken: (state, action: PayloadAction<string>) => 
+    {
       state.apiAuthorizationToken = action.payload
     },
     

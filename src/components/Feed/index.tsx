@@ -1,23 +1,26 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, useEffect } from "react";
 
-import { IUserInfo } from "../../types/interfaces/user";
+import { DisplayMode } from "../../types/enums/displayMode";
+import { LoadStatus } from "../../types/enums/loadStatus";
 
-import { IFeedItem } from "./../../types/api/api";
+import { IFeedItem } from "./../../types/interfaces/feedItem";
+
 import ApiService from "./../../services/ApiService";
-import { FeedContentItemComponent } from "./../../components/FeedContentItem/FeedContentItem";
+
+import { ProfilePostContentItem } from "./../../components/ProfilePostContentItem";
 
 import "./Feed.scss";
-import { IServiceWrapper } from "../../types/interfaces/services";
 
-export function Feed(props: { 
-    displayMode?: "normal" | "skeleton";
+export function Feed(props: 
+{ 
+    displayMode?: DisplayMode;
     translations: any
 }) 
 {
     // TODO: Remove
-    const [loadingStatus, setLoadingStatus] = useState<string>("loading");
-    const [feedItems, setFeedItems] = useState<Array<IFeedItem>>([]);
-    const [currentFeedItem, setCurrentFeedItem] = useState<IFeedItem | null>(null);
+    const [loadingStatus, setLoadingStatus] = useState<LoadStatus>(LoadStatus.Loading);
+    
+    const [feedItems, setFeedItems] = useState<IFeedItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
 
     useEffect(() => {
@@ -32,41 +35,43 @@ export function Feed(props: {
                 .then((response: any) => 
                 {
                     setFeedItems(response.data);
-                    setLoadingStatus("loaded");
+                    setLoadingStatus(LoadStatus.Loaded);
                 })
                 .catch((err: Error) => {
                     console.log(err);
-                    setLoadingStatus("loaded");
+                    setLoadingStatus(LoadStatus.Loaded);
                 });
         }, 2000);
     };
 
-    const refreshList = () => {
+    const refreshList = () => 
+    {
         retrieveFeedItems();
-        setCurrentFeedItem(null);
         setCurrentIndex(-1);
     };
 
-    const createdByUser:IUserInfo = {
-        id: "12345",
-        firstName: "Darin",
-        fullName: "Darin Morris",
-        gender: 1,
-        profilePictureUrl: "/images/temp/profile-photo.jpg",
-        profileCoverPicture: "/images/temp/cover-photo.jpg",
-        description: "Aliquam at tellus pellentesque nunc porta sollicitudin. Suspendisse et purus et metus sagittis rutrum.",
-        websiteUrl: "https://www.darinm.com"
-    };
-
     return (
-        <React.Fragment>
-        {props.displayMode === "normal" &&
-            <ul className="feed">
-                {feedItems && feedItems.map((feedItem, index) => (
-                    <FeedContentItemComponent key={index} data={feedItem} getDataUrl={"/data/post"} createdByUser={createdByUser} />
-                ))}
-            </ul>
+        <div className="feed">
+        {props.displayMode === DisplayMode.Normal && 
+            <React.Fragment>
+                <div className="feed-items">
+                    <ul>
+                        {(feedItems).map((feedItem) => (
+                            <ProfilePostContentItem key={feedItem.id} data={feedItem} displayMode={props.displayMode} translations={props.translations} />
+                        ))}
+                    </ul>
+                </div>
+                <nav className="feed-pagination" aria-label="Page navigation example">
+                    <ul className="pagination">
+                        <li className="page-item"><a className="page-link" href="#">Previous</a></li>
+                        <li className="page-item"><a className="page-link" href="#">1</a></li>
+                        <li className="page-item"><a className="page-link" href="#">2</a></li>
+                        <li className="page-item"><a className="page-link" href="#">3</a></li>
+                        <li className="page-item"><a className="page-link" href="#">Next</a></li>
+                    </ul>
+                </nav>
+            </React.Fragment>
         }
-        </React.Fragment>
+        </div>
     );
 }

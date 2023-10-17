@@ -5,121 +5,113 @@ import './FormDropdownBox.scss';
 
 export interface IDropDownData 
 {
-    label: string;
-    trxCode: string;
-    iconAddress?: string;
-    options: IDropDownOptionData[];
+	label: string;
+	trxCode: string;
+	iconAddress?: string;
+	options: IDropDownOptionData[];
 }
 
 export interface IDropDownOptionData 
 {
-    value: string;
-    label: string;
-    trxCode: string;
-    iconAddress?: string;
+	value: string;
+	label: string;
+	trxCode: string;
+	iconAddress?: string;
 }
 
-interface IFormDropdownBoxProps {
-  id?: string;
-  placeholder: string;
-  options: any[],
-  sortBy?: 'alpha' | 'explicit' | null;
-  value: string;
-  cssClasses?: string;
-  size?: number;
-  translations: any,
-  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  required?: boolean;
-  autoComplete?: string | undefined;
-  textDirection?: 'ltr' | 'rtl' | 'auto';
-}
-
-export const FormDropdownBox = ({
-  id,
-  placeholder,
-  options,
-  sortBy,
-  value,
-  cssClasses,
-  size,
-  translations,
-  onChange,
-  required,
-  autoComplete,
-  textDirection,
-  ...props
-}: IFormDropdownBoxProps) => 
+export enum FormDropdownSortBy
 {
-  const normalizeOptions = (options: any[]) => 
-  {
-      const list: IDropDownOptionData[] = [];
-  
-      options.forEach(option => {
+	None,
+	Alphabetical,
+	Explicit
+}
 
-        if(!_.isEmpty(option.twoLetterCode) && !_.isEmpty(option.name))
-        {
-            list.push({
-              value: option.twoLetterCode,
-              label: option.name,
-              trxCode: option.nameTrxCode,
-              iconAddress: ""
-            });
-        }
-        else
-        {
-            list.push({
-              value: option.value,
-              label: option.label,
-              trxCode: option.trxCode,
-              iconAddress: option.iconAddress
-            });
-        }
-      });
-  
-      return list;
-  }
+export const FormDropdownBox = (props: 
+{
+	translations: any,
+	id?: string,
+	placeholder?: string,
+	options: any[],
+	value: string,
+	sortBy?: FormDropdownSortBy,
+	cssClasses?: string,
+	size?: number,
+	onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void,
+	required?: boolean,
+	autoComplete?: string | undefined,
+	textDirection?: 'ltr' | 'rtl' | 'auto'
+}) => 
+{
+	const normalizeOptions = (options: any[]) => 
+	{
+		const list: IDropDownOptionData[] = [];
 
-  const getTranslatedOptions = (options: IDropDownOptionData[]) => 
-  {
-      const list: IDropDownOptionData[] = _.cloneDeep(options);
-  
-      options.forEach(option => {
-        
+		if(options.length < 1)
+			return list;
 
-        option.label = _.isEmpty(option.trxCode) || _.isEmpty(trx(option.trxCode)) ? option.label : trx(option.trxCode);
-      });
-  
-      return list;
-  }
-   
-  const trx = function (translationKey: string, defaultValue?: string | undefined | null) 
-  {
-      const translation = translations[translationKey];
-  
-      if(translation)
-        return translation;
-  
-      if(defaultValue && !_.isEmpty(defaultValue))
-        return defaultValue;
-  
-      return translationKey;
-  }
+		options.forEach(option => 
+		{
+			if(!_.isEmpty(option.twoLetterCode) && !_.isEmpty(option.name))
+			{
+				list.push({
+					value: option.twoLetterCode,
+					label: option.name,
+					trxCode: option.nameTrxCode,
+					iconAddress: ""
+				});
+			}
+			else
+			{
+				list.push({
+					value: option.value,
+					label: option.label,
+					trxCode: option.trxCode,
+					iconAddress: option.iconAddress
+				});
+			}
+		});
+	
+		return list;
+	}
 
-  console.log(id);
-  console.dir(options);
+	const getTranslatedOptions = (options: IDropDownOptionData[]) => 
+	{
+		const list: IDropDownOptionData[] = _.cloneDeep(options);
+	
+		options.forEach(option => {
+		
 
-  const optionsList = sortBy === "alpha" ? 
-      _.sortBy(getTranslatedOptions(normalizeOptions(options)), [function(o) { return o.label; }]) : 
-      normalizeOptions(getTranslatedOptions(options));
+		option.label = _.isEmpty(option.trxCode) || _.isEmpty(trx(option.trxCode)) ? option.label : trx(option.trxCode);
+		});
+	
+		return list;
+	}
+	 
+	const trx = function (translationKey: string, defaultValue?: string | undefined | null) 
+	{
+		const translation = props.translations[translationKey];
+	
+		if(translation)
+		return translation;
+	
+		if(defaultValue && !_.isEmpty(defaultValue))
+		return defaultValue;
+	
+		return translationKey;
+	}
 
-  return (
-    <select className="form-control" id={id} value={value} onChange={onChange} size={size} required={required} autoComplete={autoComplete} dir={textDirection} {...props}>
-      {placeholder && <option value="" disabled hidden>{trx(placeholder)}</option>}
-      {optionsList.map((option, index) => {
-        return (
-          <option key={index} value={option.value}>{option.label}</option>
-        )
-      })}
-    </select>
-  );
+	const optionsList = props.sortBy === FormDropdownSortBy.Alphabetical ? 
+		_.sortBy(getTranslatedOptions(normalizeOptions(props.options)), [function(o) { return o.label; }]) : 
+		normalizeOptions(getTranslatedOptions(props.options));
+
+	return (
+		<select className="dropdown form-control" id={props.id} onChange={props.onChange} size={props.size} required={props.required} autoComplete={props.autoComplete} dir={props.textDirection} value={props.value}>
+			{props.placeholder && <option value="" disabled hidden>{trx(props.placeholder)}</option>}
+			{optionsList.map((option, index) => {
+				return (
+					<option key={index} value={option.value}>{option.label}</option>
+				)
+			})}
+		</select>
+	);
 };

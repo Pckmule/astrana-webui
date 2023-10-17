@@ -1,0 +1,51 @@
+@import "./../../../src/themes/constants.scss";
+
+.profile-intro
+{
+	display:block;
+	overflow: hidden;
+	width:100%;
+	background-color: #fff;
+
+	.btn 
+	{
+		width:auto !important;
+		margin:5px 3px;
+	}
+
+	.profile-intro-body
+	{
+		padding: 0px;
+		
+		textarea 
+		{
+			width: 100%;
+			padding:10px;
+			text-align: center;
+			background-color: $color-lightestgray;
+			border: 1px solid $border-color-darkergray;
+		}
+	}
+
+	.profile-intro-foot
+	{
+		display: block;
+		
+		.remaining-characters
+		{
+			display: block;
+			clear: both;
+			font-size: 0.75rem;
+			color: $color-darkgray;
+		}
+	}
+}
+
+.profile-intro.stencil
+{
+  .profile-intro-head,
+  .profile-intro-body
+  {
+    visibility: hidden;
+  }
+}

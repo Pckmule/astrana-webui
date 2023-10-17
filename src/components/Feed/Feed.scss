@@ -4,7 +4,7 @@
     margin: 0 auto;
     padding: 0;
     text-align: left;
-    max-width: 600px;
+    max-width: 800px;
 
     .load-indicator
     {
@@ -12,5 +12,26 @@
         width: 100%;
         margin: 0 auto;
         text-align: center;
+    }
+
+    .feed-items
+    {
+        display: block;
+
+        ul
+        { 
+            list-style-type:none;
+        }
+    }
+
+    .feed-pagination
+    {       
+        display: block; 
+        margin: auto;
+
+        .pagination
+        {
+            margin: auto;
+        }
     }
 }

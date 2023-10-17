@@ -21,7 +21,7 @@
   {
     padding: 10px 15px 15px 15px;
 
-    .peers
+    .peers-grid
     {
       display: block;
 
@@ -29,15 +29,14 @@
       {
         display: inline-block;
         overflow-x: hidden;
-        width:148px;
-        margin:5px;
+        width:31%;
+        margin:5px 1.7%;
 
         .profile-image
         {
           display: block;
           overflow: hidden;
-          width:146px;
-          height:146px;
+          width:100%;
           border-radius: 5px;
           border: 1px solid $image-border-color-with-alpha;
           background-color: $image-bg-color;
@@ -65,15 +64,16 @@
         }
       }
     }
+    
+    .peer-s
+    {
+      margin-left:0% !important;
+    }
 
-  }
-}
+    .peer-e
+    {
+      margin-right:0% !important;
+    }
 
-.profile-section.skeleton
-{
-  .profile-section-head,
-  .profile-section-body
-  {
-    visibility: hidden;
   }
 }

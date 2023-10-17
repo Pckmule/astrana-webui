@@ -1,22 +1,19 @@
 import React, { useEffect } from 'react';
 import _ from 'lodash';
 
-import { Link } from 'react-router-dom';
+import { DisplayMode } from '../../types/enums/displayMode';
 
-import { IPeerInformation } from '../../types/objects/peerInformation';
+import { IPeerInformation } from '../../types/interfaces/peerInformation';
 
 import TranslationService from '../../services/TranslationService';
 import UrlBuilderService from '../../services/UrlBuilderService';
-
-import "./VideosList.scss";
 import PeerService from '../../services/PeerService';
 
-export function VideosList(props: { 
-  displayMode?: "normal" | "skeleton";
-  translations: any, 
-  profileId: string; 
-  pageSize?: number;
-}) 
+import { Link } from 'react-router-dom';
+
+import "./VideosList.scss";
+
+export function VideosList(props: { displayMode?: DisplayMode; translations: any; profileId: string; pageSize?: number; }) 
 {
     const [videos, setVideos] = React.useState<IPeerInformation[]>([]);
 
@@ -36,8 +33,8 @@ export function VideosList(props: {
 
     const cssClasses: string[] = ["card", "video-list", "rounded", "mt-3 mb-3"];
 
-    if(props.displayMode === "skeleton")
-      cssClasses.push("skeleton");
+    if(props.displayMode === DisplayMode.Stencil)
+      cssClasses.push("stencil");
 
     const getProfilePictureUrl = (video: IPeerInformation) => 
     {      

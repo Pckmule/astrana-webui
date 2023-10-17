@@ -1,0 +1,42 @@
+@import "./../../../src/themes/constants.scss";
+
+.album-grid
+{
+	display: flex;
+	justify-content: left;
+	align-items:start;
+	flex-flow: row wrap;
+
+	.album
+	{
+		display: inline-flex;
+		flex-grow: 0;
+		flex-shrink:0;
+		overflow: hidden;
+		border-radius: 5px;
+		margin: 0.5%;
+
+		.album-cover-image
+		{
+			display: block;
+		}
+		
+		.album-details
+		{
+			display: block;
+			margin-top: 0.5rem;
+
+			.album-details-name,
+			.album-details-itemcount
+			{
+				display: block;
+				font-size: 0.75rem;
+			}
+		}
+	}
+}
+
+.album-grid.stencil
+{
+	visibility: hidden;
+}

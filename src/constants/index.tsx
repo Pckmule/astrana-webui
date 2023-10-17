@@ -3,9 +3,9 @@ export const defaultTimeZone = "GMT";
 export const defaultDatabaseProvider = { code: "2", name: "PostgreSQL" };
 
 export const phoneCodes = [
-    { icon: "http://www.geonames.org/flags/x/za.gif", value: "27", text: "27 (ZA)" }, 
-    { icon: "", value: "61", text: "61 (AU)" }, 
-    { icon: "", value: "1", text: "1 (US)" }
+    { icon: "http://www.geonames.org/flags/x/za.gif", value: "27", label: "27 (ZA)" }, 
+    { icon: "", value: "61", label: "61 (AU)" }, 
+    { icon: "", value: "1", label: "1 (US)" }
   ];
 
 export const regions = [

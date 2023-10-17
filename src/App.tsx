@@ -1,12 +1,5 @@
-import "./App.css";
-import "./layout.scss";
-
-import React from "react";
+import React from 'react';
 import _ from 'lodash';
-
-import { IApplicationCache } from "./types/objects/applicationCache";
-
-import { IUserInfo } from "./types/interfaces/user";
 
 import { LoginPage } from "./../src/pages/LoginPage";
 import { SetupPage } from './../src/pages/SetupPage';
@@ -14,148 +7,245 @@ import { HomePage } from "./../src/pages/HomePage";
 import { PinBoardPage } from "./../src/pages/PinBoardPage";
 import { NewsReaderPage } from "./../src/pages/NewsReaderPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { MediaPage } from "./pages/MediaPage";
+import { MediaSetPage } from './pages/MediaSetPage';
+import { SettingsPage } from "./pages/SettingsPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 
-import { BrowserRouter, Routes, Route, Link, Navigate  } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+
+import { useSelector } from 'react-redux';
+import { RootState } from './app/store';
 
 import { useAppSelector, useAppDispatch } from './app/hooks';
 import { setAuthToken, clearAuthToken, selectAuthToken} from './features/session/sessionSlice';
 
+import "./App.css";
+import "./layout.scss";
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() 
 {
-    const cache: IApplicationCache = { 
-        lastModified: new Date(),
-        items: []
-    };
+	const authToken = useSelector((state: RootState) => state.session.apiAuthorizationToken);
 
-    const [state, setState] = React.useState({ 
-        applicationSettings: {
-            apiDomain: "https://localhost:44301/",
-            peerInformation: null
-        }
-    });
+	console.dir(authToken);
 
-    const userInfo: IUserInfo = {
-        id: "12345",
-        firstName: "Darin",
-        fullName: "Darin Morris",
-        gender: 1,
-        profilePictureUrl: "/images/temp/profile-photo.jpg",
-        profileCoverPicture: "/images/temp/cover-photo.jpg",
-        description: "Aliquam at tellus pellentesque nunc porta sollicitudin. Suspendisse et purus et metus sagittis rutrum.",
-        websiteUrl: "https://www.darinm.com"
-    }
-    
-    function getAuth() 
-    {
-        const authToken = "ddd"; //useAppSelector(selectAuthToken);
+	function getAuth() 
+	{
+		return !_.isEmpty(authToken) && _.isString(authToken); 
+	}
+	
+	interface IRequireAuth {
+		children: any;
+		redirectTo: string;
+	}
 
-        return !_.isEmpty(authToken) && _.isString(authToken); 
-    }
-    
-    interface IRequireAuth {
-        children: any;
-        redirectTo: string;
-    }
+	function RequireAuth({ children, redirectTo } : IRequireAuth) 
+	{
+		let isAuthenticated = getAuth();
+		return isAuthenticated ? children : <Navigate to={redirectTo} />;
+	}
+	
+	return (
+		<React.Fragment>
+			<div className="App">
+				<BrowserRouter basename="/">				
+					<Routes>
+						<Route path="/" element={
+							<RequireAuth redirectTo="/login">
+								<HomePage />
+							</RequireAuth>
+						}></Route>
 
-    function RequireAuth({ children, redirectTo } : IRequireAuth) {
-      let isAuthenticated = getAuth();
-      return isAuthenticated ? children : <Navigate to={redirectTo} />;
-    }
-    
-    return (
-        <div className="App">
-            <BrowserRouter basename="/">                
-                <Routes>
-                    <Route path="/" element={
-                        <RequireAuth redirectTo="/login">
-                            <HomePage cache={cache} settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/pinboards" element={
+							<RequireAuth redirectTo="/login">
+								<PinBoardPage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/pinboards" element={
-                        <RequireAuth redirectTo="/login">
-                            <PinBoardPage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/newsfeed" element={
+							<RequireAuth redirectTo="/login">
+								<NewsReaderPage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/newsfeed" element={
-                        <RequireAuth redirectTo="/login">
-                            <NewsReaderPage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id/posts" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id/posts" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id/about" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id/about" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/about" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/about" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id/peers" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id/peers" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/peers" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/peers" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/peers/requests" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id/photos" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
-                    
-                    <Route path="/profile/photos" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id/peers-requests" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/:id/videos" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
+						<Route path="/profile/:id/photos" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+						
+						<Route path="/profile/photos" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
 
-                    <Route path="/profile/videos" element={
-                        <RequireAuth redirectTo="/login">
-                            <ProfilePage settings={state.applicationSettings} user={userInfo} />
-                        </RequireAuth>
-                    }></Route>
-                    
-                    <Route path="/setup"element={<SetupPage settings={state.applicationSettings} user={userInfo} />}></Route>
-                    <Route path="/login" element={<LoginPage settings={state.applicationSettings} user={userInfo} />}></Route>
-                </Routes>
-            </BrowserRouter>
-        </div>
-    );
+						<Route path="/profile/photos_albums" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/profile/:id/photos_albums" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+						
+						<Route path="/profile/:id/videos" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/profile/videos_albums" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/profile/:id/videos_albums" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/profile/albums/:albumid" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/profile/:id/albums/:albumid" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/photo/:id" element={
+							<RequireAuth redirectTo="/login">
+								<MediaPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/video/:id" element={
+							<RequireAuth redirectTo="/login">
+								<MediaPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/media/set" element={
+							<RequireAuth redirectTo="/login">
+								<MediaSetPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/media/set/:id" element={
+							<RequireAuth redirectTo="/login">
+								<MediaSetPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/media/set/create" element={
+							<RequireAuth redirectTo="/login">
+								<MediaSetPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/connect/requests" element={
+							<RequireAuth redirectTo="/login">
+								<ProfilePage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/settings" element={
+							<RequireAuth redirectTo="/login">
+								<SettingsPage />
+							</RequireAuth>
+						}></Route>
+						
+						<Route path="/settings/:category" element={
+							<RequireAuth redirectTo="/login">
+								<SettingsPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/notifications" element={
+							<RequireAuth redirectTo="/login">
+								<NotificationsPage />
+							</RequireAuth>
+						}></Route>
+						
+						<Route path="/notifications/:id" element={
+							<RequireAuth redirectTo="/login">
+								<NotificationsPage />
+							</RequireAuth>
+						}></Route>
+
+						<Route path="/setup"element={<SetupPage />}></Route>
+						<Route path="/login" element={<LoginPage />}></Route>
+					</Routes>
+				</BrowserRouter>
+			</div>
+			<ToastContainer />
+		</React.Fragment>
+	);
 }
 
 export default App;

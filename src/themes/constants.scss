@@ -1,5 +1,78 @@
+$responsiveWidthLimitExtraSmall: 576px;
+$responsiveWidthLimitSmall: 768px;
+$responsiveWidthLimitMedium: 992px;
+$responsiveWidthLimitLarge: 1200px;
+$responsiveWidthLimitExtraLarge: 1400px;
+
 $astrana-primary-color: rgb(97, 205, 255);
 $image-bg-color: rgb(245,245,245);
 $image-border-color: rgb(220,220,220);
 $image-border-color-with-alpha: rgba(220,220,220,0.125);
+$default-border-color: rgb(245,245,245);
 
+$border-color-verydarkgray: rgb(150,150,150);
+$border-color-darkgray: rgb(180,180,180);
+$border-color-darkergray: rgb(200,200,200);
+$border-color-gray: rgb(220,220,220);
+$border-color-lightgray: rgb(240,240,240);
+
+$color-white: rgb(255,255,255);
+$color-white-glow: rgba(255,255,255,0.2);
+
+$color-red:rgb(245,83,61);
+$color-red-glow:rgba(245,83,61,0.2);
+
+$color-purple:rgb(150,75,250);
+$color-purple-glow:rgba(150,75,250,0.2);
+
+$color-blue:rgb(24,119,242);
+$color-blue-glow:rgba(24,119,242,0.2);
+
+$color-turquoise:rgb(42,187,167);
+$color-turquoise-glow:rgba(42,187,167,0.2);
+
+$color-green:rgb(69,189,98);
+$color-green-glow:rgba(69,189,98,0.2);
+
+$color-yellow:rgb(248,186,43);
+$color-yellow-glow:rgba(248,186,43,0.2);
+
+$color-verydarkgray:rgb(100,100,100);
+$color-verydarkgray-glow:rgba(100,100,100,0.2);
+
+$color-darkgray:rgb(150,150,150);
+$color-darkgray-glow:rgba(150,150,150,0.2);
+
+$color-gray:rgb(200,200,200);
+$color-gray-glow:rgba(200,200,200,0.2);
+
+$color-lightgray: rgb(240,240,240);
+$color-lightgray-glow: rgba(240,240,240,0.2);
+
+$color-lightergray: rgb(245,245,245);
+$color-lightergray-glow: rgba(245,245,245,0.2);
+
+$color-lightestgray: rgb(250,250,250);
+$color-lightestgray-glow: rgba(250,250,250,0.2);
+
+$default-link-color: #333;
+$default-link-hover-color: #37b;
+
+$background-color-validation-valid: rgb(245,255,245);
+$border-color-validation-valid:  rgb(50,180,50);
+$text-color-validation-valid:  rgb(0,150,0);
+$placeholder-text-color-validation-valid:  rgb(100,200,100);
+
+$background-color-validation-invalid: rgb(255,245,245);
+$border-color-validation-invalid:  rgb(255,220,220);
+$text-color-validation-invalid:  rgb(210,50,50);
+$placeholder-text-color-validation-invalid:  rgb(255,150,150);
+
+$stencil-text-color-light: rgb(255,255,255,0.5);
+$stencil-text-color-default: rgb(220,220,220,0.5);
+$stencil-text-color-dark: rgb(100,100,100,0.5);
+
+.primary-color
+{
+	color: $astrana-primary-color;
+}

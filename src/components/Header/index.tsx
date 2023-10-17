@@ -1,84 +1,159 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef } from 'react';
 
-import { ProfilePostItem } from '../../types/api/api';
-import { IUserInfo } from '../../types/interfaces/user';
+import { DisplayMode } from '../../types/enums/displayMode';
 
-import ApiService from '../../services/ApiService';
+import { INavigationMenuItem } from '../../types/interfaces/navigationMenuItem';
+import { INotification } from '../../types/interfaces/notification';
+
+import TranslationService from '../../services/TranslationService';
 
 import { Link } from 'react-router-dom';
 import { ProfileImage } from '../ProfileImage';
 import { Button } from './../../components/Button';
 import { Icon } from './../../components/Icon';
+import { NavigationMenu } from '../NavigationMenu';
+import { NotificationsList } from '../NotificationsList';
 
-import './header.scss';
+import './Header.scss';
 
-export function Header(props: { displayMode?: "normal" | "skeleton"; user?: any; }) 
+export function Header(props: { displayMode?: DisplayMode; translations: any; user?: any; }) 
 {
-    // TODO: Remove
-    const [loadingStatus, setLoadingStatus] = useState<string>("loading");
-    const [feedItems, setProfilePostsItems] = useState<Array<ProfilePostItem>>([]);
-    const [currentProfilePostsItem, setCurrentProfilePostsItem] = useState<ProfilePostItem | null>(null);
-    const [currentIndex, setCurrentIndex] = useState<number>(-1);
+    const [windowScrollTop, setWindowScrollTop] = React.useState<number>(0);
 
-    useEffect(() => {
-        retrieveProfilePostsItems();
-    }, []);
+    const [currentMenuName, setCurrentMenuName] = React.useState<string>("");
+    const [menuTop, setMenuTop] = React.useState<number>(0);
+    const [menuLeft, setMenuLeft] = React.useState<number>(0);
+    const [menuVisible, setMenuVisible] = React.useState<boolean>(false);
 
-    const retrieveProfilePostsItems = async () => {
-        
-        setTimeout(async function()
+	const trxService = TranslationService();
+	
+	const accountMenuItems: INavigationMenuItem[] = [
+		{ name: "profile", text: trxService.trx(props.translations, "nav_menuitem_profile"), href: "/profile", iconName: "account" },
+		{ name: "settings_and_privacy", text: trxService.trx(props.translations, "settings_and_privacy"), href: "/settings", iconName: "cog" },
+		{ name: "display_and_accessibility", text: trxService.trx(props.translations, "display_and_accessibility"), href: "/settings", iconName: "moon-waning-crescent" },
+		{ name: "logout", text: trxService.trx(props.translations, "logout"), href: "/logout", iconName: "logout" }
+	];
+
+	const notifications: INotification[] = [
+		{ type: "general", text: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.", data: {} },
+		{ type: "general", text: "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.", data: {} },
+		{ type: "general", text: "When an unknown printer took a galley of type and scrambled it to make a type specimen book.test", data: {} },
+		{ type: "general", text: "It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.", data: {} },
+		{ type: "general", text: "It was popularised in the 1960s.", data: {} }
+	];
+
+    const handleLogout = () => {};
+
+    const profilePictureUrl = props.user?.profilePicture?.location ?? undefined;
+
+    const menuRef = React.useRef<HTMLDivElement>(null);
+
+	const setMenuPostion = (controlNode: HTMLElement, menuNode: HTMLDivElement) => {
+
+		const menuWidth = menuNode?.clientWidth ?? 0;
+		const bounds = controlNode.getBoundingClientRect();
+
+		setMenuTop(() => bounds.y + bounds.height + 5 + windowScrollTop);
+		setMenuLeft(() => bounds.x - menuWidth + bounds.width); 		
+	};
+
+    const showMenu = (event: React.MouseEvent<HTMLElement>) =>
+    {
+        if(event.target)
         {
-            await ApiService().getAll("posts?page=1&pageSize=10")
-                .then((response: any) => 
-                {
-                    setProfilePostsItems(response.data);
-                    setLoadingStatus("loaded");
-                })
-                .catch((err: Error) => {
-                    console.log(err);
-                    setLoadingStatus("loaded");
-                });
-        }, 2000);
+			const controlNode = event.currentTarget;
+
+			if(menuVisible)
+			{
+				setMenuPostion(controlNode, menuRef.current!);
+
+				if(menuRef.current)
+					menuRef.current.focus();
+			}
+			else
+			{			
+            	setMenuVisible(true);
+
+				setMenuTop(() => -10000);
+				setMenuLeft(() => -10000); 
+
+				setTimeout(() => {
+					setMenuPostion(controlNode, menuRef.current!);
+
+					if(menuRef.current)
+						menuRef.current.focus();
+				}, 1);
+			}
+
+			window.addEventListener("resize", () => { setMenuPostion(controlNode, menuRef.current!); });
+        }
+    }
+
+    const handleMenuBlur = () => 
+    {
+       	setMenuVisible(false);
+		setCurrentMenuName("");
     };
 
-    const refreshList = () => {
-        retrieveProfilePostsItems();
-        setCurrentProfilePostsItem(null);
-        setCurrentIndex(-1);
+    const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => 
+    {
+        event.preventDefault();
     };
 
-    const onLogin = () => {};
-    const onLogout = () => {};
-    const onCreateAccount = () => {};
+	const showAccountMenu = (event: React.MouseEvent<HTMLElement>) => 
+	{
+		setCurrentMenuName("account");
+		showMenu(event);
+	}
+
+	const showNotificationsMenu = (event: React.MouseEvent<HTMLElement>) => 
+	{
+		setCurrentMenuName("notifications");
+		showMenu(event);
+	}
 
     return (
-        <header>
-          <div className="wrapper">
-            <div>
-              <Link to="/">
-                <img width="32" height="32" src = "/logo192.png" style={{border: "1px solid white", borderRadius: "8px"}} />
-                <h1>Astrana</h1>
-              </Link>
-            </div>
-            <div>
-              {props.user ? (
-                  <span className="main-nav">
-                    <a className="nav-item" href="#add"><Icon name="mdi-plus-circle-outline"></Icon></a>
-                    <a className="nav-item" href="/notifications"><Icon name="mdi-bell"></Icon></a>
-                    <Link className="nav-item" to="/settings"><Icon name="mdi-cog"></Icon></Link>
-                    <a className="nav-item" onClick={onLogout} href="#logout"><Icon name="mdi-logout"></Icon></a>
-                    <Link to="/profile" className="instance-user rounded">
-                      <ProfileImage peerName={props.user.fullName} imageAddress={props.user.profilePictureUrl} width={32} height={32} />
-                    </Link>
-                  </span>
-                  ) : (
-                    <span>
-                      <Button size="small" onClick={onLogin} label="Log in" />
-                      <Button primary size="small" onClick={onCreateAccount} label="Sign up" />
-                    </span>
-                  )}
-            </div>
-          </div>
-        </header>
+		<React.Fragment>
+			<header>
+				<div className="wrapper">
+					<div>
+					<Link to="/">
+						<img width="32" height="32" src = "/logo192.png" style={{border: "1px solid white", borderRadius: "8px"}} />
+						<h1>Astrana</h1>
+					</Link>
+					</div>
+					<div>
+					{props.user && 
+						<span className="main-nav">
+							<a className="nav-item" href="#add"><Icon name="plus-circle-outline"></Icon></a>
+							<span className="nav-item" onClick={(event) => showNotificationsMenu(event) }><Icon name="bell"></Icon></span>
+							<span className="instance-user rounded" onClick={(event) => showAccountMenu(event) }>
+								<ProfileImage displayMode={props.displayMode} translations={props.translations} peerName={props.user.fullName} imageAddress={profilePictureUrl} width={32} height={32} />
+							</span>
+						</span>
+					}
+					</div>
+				</div>
+			</header>
+			
+			{menuVisible &&
+				<div ref={menuRef} className="header-menu rounded" style={{top: menuTop + "px", left: menuLeft + "px"}} onBlur={handleMenuBlur} tabIndex={-1} onMouseDown={handleMenuClick}>
+					{currentMenuName === "account" && <NavigationMenu displayMode={props.displayMode} menuItems={accountMenuItems} spacing={2} iconSize={2} />}
+					{currentMenuName === "notifications" && 
+						<React.Fragment>
+							<div className="header-menu-header">
+								Notifications
+							</div>
+							<div className="header-menu-scroll">
+								<NotificationsList displayMode={props.displayMode} notifications={notifications} spacing={2} iconSize={2} />
+							</div>
+							<div className="view-all-notifications">
+								<Link to="/notifications">All Notifcations</Link>
+							</div>
+						</React.Fragment>
+					}
+				</div>
+			}
+		</React.Fragment>
     );
 }

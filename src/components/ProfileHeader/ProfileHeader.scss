@@ -2,42 +2,169 @@
 
 .profile-header
 {
-  display:block;
-  overflow: hidden;
-  width:100%;
-  background-color: #fff;
+	position: relative;
+	display:block;
+	overflow: hidden;
+	width:100%;
+	background-color: #fff;
 
-  .profile-header-cover-picture
-  {
-    display:block;
-    overflow: hidden;
-    width:100%;
-    height:350px;
-  }
+	.profile-header-cover
+	{
+		position: relative;
+		display:block;
+		clear: both;
+		overflow: hidden;
+		width:100%;
+	}
 
-  .profile-header-nav
-  {    
-    display:block;
-    overflow: hidden;
-  
-    ul
-    {
-      margin:10px;
-      padding:0;
+	.profile-header-cover-picture
+	{
+		position: relative;
+		display:block;
+		overflow: hidden;
+		width:100%;
+		height:350px;
+		float: left;
+		background-color: rgb(250,250,250);
+		border-bottom: 1px solid $default-border-color;
 
-      .nav-link.active
-      {
-        background: $astrana-primary-color;        
-      }
-    }
-  }
+		.edit-cover-photo-btn
+		{
+			position: absolute;
+			z-index: 1000;
+			bottom:1.25rem;
+			right:1.25rem;
+		}
+	}
+
+	.profile-header-summary
+	{
+		position: relative;
+		display:block;
+		clear: both;
+		width:100%;
+
+		.profile-header-profile-picture
+		{
+			position: relative;
+			display:inline-block;
+			top: -1.75rem;
+
+			.profile-header-profile-picture2
+			{
+				position: relative;
+				display:block;
+				overflow: hidden;
+				width:100%;
+				width:150px;
+				height:150px;
+				margin-left:.75rem;
+
+				.image
+				{
+					border-radius:50%;
+					border:4px solid rgb(255,255,255);
+					overflow: hidden;
+
+					img
+					{
+						border-radius:50%;
+						border:none;
+						margin:auto;
+						overflow: hidden;
+					}
+				}
+
+				.edit-profile-photo-btn
+				{
+					position: absolute;
+					z-index: 1000;
+					bottom:.5rem;
+					right:.75rem;
+					border-radius:50%;
+				}
+			}
+		}
+		
+		.profile-header-profile-name
+		{
+			display:inline-block;
+			padding:0.75rem 1.75rem;
+
+			h1
+			{
+				font-size:1.75rem;
+				font-weight: bold;
+				margin-bottom: 0.25rem;
+			}
+
+			.profile-header-profile-peers-count
+			{
+				margin-bottom: 0.5rem;
+			}
+
+			.profile-header-profile-peers
+			{ 
+				.image
+				{
+					border-radius:50%;
+					border:1px solid rgb(255,255,255);
+					overflow: hidden;
+					float: left;
+					margin:0;
+					padding: 0;
+
+					img
+					{
+						border-radius:50%;
+						border:none;
+						overflow: hidden;
+					}
+				}
+			}
+		}
+	
+		.profile-header-profile-controls
+		{			
+			display:inline-block;
+			padding:0.75rem 1.75rem;
+		}
+	}
+
+	.profile-header-nav
+	{		
+		display:block;
+		overflow: hidden;
+		clear: both;
+		margin:10px;
+		position: relative;
+	
+		ul
+		{
+			padding:0;
+
+			.nav-link.active
+			{
+				background: $astrana-primary-color;				
+			}
+		}
+	}
 }
 
-.profile-header.skeleton
+.profile-header.stencil
 {
-  .profile-header-cover-picture,
-  .profile-header-nav
-  {
-    visibility: hidden;
-  }
+	.profile-header-cover-picture
+	{
+		background-color: $color-lightestgray;
+
+		.image
+		{
+			background-color: $color-lightestgray;
+			
+			img
+			{
+				display: none;
+			}
+		}		
+	}
 }

@@ -1,3 +1,5 @@
+@import "./../../../src/themes/constants.scss";
+
 .post-editor 
 {
     display: block;
@@ -20,9 +22,6 @@
             margin:0.25rem;
             overflow: hidden;
             border-radius: 5px;
-
-            // display: inline-block;
-            // border-radius: 20px;
         }
 
         .textbox
@@ -60,13 +59,11 @@
 
         .actions:hover
         {
-            background-color: #ddd;
+            background-color: $color-lightgray;
         }
     }
 
-    
-
-    .actions
+    .post-editor-actions
     {
         position: relative;
         display: flex;
@@ -91,22 +88,413 @@
             border-radius: 5px;
             user-select: none;
             cursor: pointer;
+            font-size: 1rem;
 
             span, i 
             {
                 user-select: none;
                 align-items: center;
             }
+
+            .icon
+            {
+                font-size: 1.75rem;
+            }
+        }
+                    
+        .action.attach-live-video
+        {
+            .icon
+            {
+                color: $color-red;
+            }
+        }
+                    
+        .action.attach-image
+        {
+            .icon
+            {
+                color: $color-green;
+            }
+        }
+                    
+        .action.attach-feeling
+        {
+            .icon
+            {
+                color: $color-yellow;
+            }
         }
 
         .action:hover
         {
-            background-color: #eee;
+            background-color: $color-lightgray;
         }
 
         .action:active
         {
             background-color: #eef;
+        }
+    }
+}
+
+.post-editor-modal
+{
+    .waw-box
+    {
+        display: flex;
+        align-items: flex-start;
+        overflow: hidden;
+
+        .user-profile-picture
+        {
+            display: block;
+            width: 40px;
+            margin: 0;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .post-targets
+        {
+            display: block;
+            flex-grow: 1;
+            margin: 0 .75rem;
+            
+            .user-fullname
+            {
+                font-weight: bold;
+            }
+
+            .audience-selector
+            {
+                background-color: $color-lightgray;
+                padding:.25rem .5rem;
+                
+                .icon
+                {
+                    font-size: 1rem;
+                }
+
+                .label
+                {
+                    font-size: .75rem;
+                }
+            }
+        }
+    }
+
+    .modal-scroll
+    {
+        width:99%;
+        max-height: 520px;
+        padding:10px 1%;
+    }
+
+    .post-text-box
+    {
+        display: flex;
+        align-items: flex-start;
+        overflow: hidden;
+
+        .textbox
+        {
+            display: block;
+            flex-grow: 1;
+
+            textarea
+            {
+                margin:0;
+                padding:0;
+                border: none;
+                outline: 0 none;
+                box-shadow: none;
+                resize: none;
+                overflow: hidden;
+                font-size: 1.2rem;
+            }
+        }
+
+        .emoji
+        {
+            display: block;
+            width: 40px;
+            height: 30px;
+            margin: 0;
+            overflow: hidden;
+            border-radius: 5px;
+
+            .icon
+            {
+                font-size: 2rem;
+                color: $border-color-darkergray;
+                font-weight: lighter;
+            }
+        }
+    }
+
+    .post-attachment-link-options
+    {
+        display: block;
+        width:100%;
+        overflow: hidden;
+        border-radius: 5px;
+        position:relative;
+
+        .post-attachment-link-controls
+        {
+            top: 0.5rem;
+            position:absolute;
+            z-index: 1100;
+            display: none;
+
+            .btn
+            {
+                margin:3px;
+
+                i.icon{
+                    font-size: 1.1rem;
+                }
+            }
+        }
+
+        .post-attachment-link-controls.float-end
+        {
+            right: 0.5rem;
+        }
+    }
+
+    .post-attachment-link-options:hover
+    {
+        .post-attachment-link-controls
+        {
+            display: block;
+        }
+    }
+
+    .post-attachment-images-selected-images
+    {
+        display: block;
+        width:100%;
+        max-height:450px;
+        overflow: hidden;
+        border-radius: 5px;
+        position:relative;
+
+        .post-attachment-media-controls
+        {
+            top: 0.5rem;
+            position:absolute;
+            z-index: 1100;
+            display: none;
+
+            .btn
+            {
+                margin:3px;
+
+                i.icon{
+                    font-size: 1.2rem;
+                }
+            }
+        }
+
+        .post-attachment-media-controls.float-start
+        {
+            left: 0.5rem;
+        }
+
+        .post-attachment-media-controls.float-end
+        {
+            right: 0.5rem;
+        }
+
+        .post-attachment-media-items
+        {
+            position:relative;
+        }
+    }
+    
+    .post-attachment-images-selected-images:hover
+    {
+        .post-attachment-media-controls
+        {
+            display: block;
+        }
+    }
+
+    .post-attachment-options
+    {
+        display: block;
+        width:100%;
+        padding: .5rem;
+        margin: 0;
+        border: 1px solid $border-color-gray;
+
+        .post-attachment-images-options
+        {
+            display: block;
+            width:100%;
+            position: relative;
+
+            .post-attachment-media-controls
+            {
+                top: 0.5rem;
+                position:absolute;
+                z-index: 1100;
+                display: none;
+    
+                .btn
+                {
+                    margin:3px;
+    
+                    i.icon{
+                        font-size: 1.2rem;
+                    }
+                }
+            }
+    
+            .post-attachment-media-controls.float-start
+            {
+                left: 0.5rem;
+            }
+    
+            .post-attachment-media-controls.float-end
+            {
+                right: 0.5rem;
+            }
+    
+            .file-drop-zone
+            {
+                padding: 5rem 1rem;
+            }
+        }
+
+        .post-attachment-images-options:hover
+        {
+            .post-attachment-media-controls
+            {
+                display: block;
+            }
+        }
+    
+    }
+
+    .post-attachment-selector
+    {
+        display: block;
+        width:100%;
+        padding: .35rem;
+        margin: 0;
+        border: 1px solid $border-color-gray;
+        align-items: center;
+
+        .label
+        {
+            display: inline-block;            
+            font-weight: bold;
+            margin: 0 .5rem;
+        }
+
+        .attachment-types
+        {
+            margin:0;
+            padding: 0;
+            line-height: 1;
+
+            .attachment-type
+            {
+                display: inline-block;
+                margin:0 0.1rem;
+                padding:0.1rem;
+                border: none;
+
+                .icon
+                {
+                    font-size: 2rem;
+                }
+            }
+
+            .attachment-type.clickable:hover
+            {
+                background: rgba(220,220,220, 0.25);
+            }
+            
+            .attachment-type-images
+            {
+                color: $color-green;
+            }
+            
+            .attachment-type-images.active,
+            .attachment-type-images.active:hover
+            {
+                background-color: $color-green-glow;
+            }
+            
+            .attachment-type-feeling,
+            .attachment-type-feeling.active:hover
+            {
+                color: $color-yellow;
+            }
+            
+            .attachment-type-feeling.active,
+            .attachment-type-feeling.active:hover
+            {
+                background-color: $color-yellow-glow;
+            }
+            
+            .attachment-type-location
+            {
+                color: $color-red;
+            }
+            
+            .attachment-type-location.active,
+            .attachment-type-location.active:hover
+            {
+                background-color: $color-red-glow;
+            }
+            
+            .attachment-type-gif
+            {
+                color: $color-turquoise;
+            }
+            
+            .attachment-type-gif.active,
+            .attachment-type-gif.active:hover
+            {
+                background-color: $color-turquoise-glow;
+            }
+            
+            .more-attachment-types
+            {
+                color: $color-darkgray;
+            }
+        }
+    }
+}
+
+.file-drop-zone
+{
+    display: block;
+    clear: both;
+    width:100%;
+    background: $color-lightgray;
+    border: 1px solid $border-color-gray;
+    padding: 1rem;
+    cursor: pointer;
+
+    .file-drop-zone-message
+    {
+        display:inline;
+        vertical-align: middle;
+        text-align: center;
+
+        p {
+            margin:0;
+        }
+
+        .icon
+        {
+            font-size: 2rem;
         }
     }
 }

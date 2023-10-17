@@ -1,0 +1,138 @@
+@import "./../../../src/themes/constants.scss";
+
+.emoji-picker
+{
+  display:block;
+  overflow: hidden;
+  width:100%;
+  background-color: #fff;
+  border: 1px solid $border-color-gray;
+
+  .emoji-picker-header
+  {
+    display:block;
+    font-size: 1.2rem;
+    padding: 5px;
+    text-align: center;
+    border-bottom: 1px solid $border-color-lightgray;
+    text-align: left;
+
+    .emoji-picker-filter
+    {
+        display:block;
+        padding:0;
+
+        input
+        {
+          border:none;
+          width: 90%;
+          font-size: 0.8rem;
+          padding: 5px 10px;
+          color: $color-darkgray;
+          background-color: transparent;
+          outline: none;
+        }
+
+        input::placeholder
+        {
+          color: $color-gray;
+        }
+       
+       input:hover
+       {
+         background-color: $color-lightestgray;
+         outline: none;
+       }
+
+       i
+       {
+        position: relative;
+        float: right;
+        margin:5px;
+        font-size: 1.4rem;
+        color: $color-gray;
+       }
+    }
+  }
+
+  .emoji-picker-body
+  {
+    display:block;
+    width:100%;
+    height: 200px;
+    padding: 10px;
+
+    .emoji-picker-loading
+    {
+        display: block;
+        margin:0 auto;  
+    }
+
+    .emoji-picker-group-name
+    {
+      display: block;
+      font-size: 0.8rem;
+      padding: 5px;
+      margin-bottom: 5px;
+      color: $color-darkgray;
+    }
+
+    .emojis-grid
+    {
+      display: flex;
+      width:100%;
+      flex-wrap: wrap;
+
+      .emoji
+      {
+        display: inline-block;
+        flex: 1 0 16%;
+        font-size: 1.6rem;
+        line-height: 1.7;
+        border-radius: 100%;
+        padding:2px;
+        cursor: pointer;
+        margin:auto;
+        text-align: center;
+      }
+    }
+  }
+  
+  .emoji-picker-footer
+  {
+    display:block;
+    font-size: 1.2rem;
+    padding: 5px;
+    text-align: center;
+    border-top: 1px solid $border-color-lightgray;
+
+    .group
+    {
+      display: inline-block;
+      margin: 3px 1px;
+      padding: 5px;
+      border-radius: 100%;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .group:hover
+    {
+      background-color: $color-lightergray;
+    }
+    
+    .group.active
+    {
+      color: $astrana-primary-color;
+    }
+  }
+}
+
+.emoji-picker.stencil
+{
+  .emoji-picker-foot,
+  .emoji-picker-body
+  {
+    visibility: hidden;
+  }
+}

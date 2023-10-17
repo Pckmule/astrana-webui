@@ -1,0 +1,125 @@
+@import "./../../../src/themes/constants.scss";
+
+.feed-settings
+{
+	display: block;
+	clear: both;
+	margin: 0 auto;
+	padding: 0;
+	text-align: left;
+	max-width: 800px;
+
+	.controls
+	{
+		display: block;
+		width: 100%;
+		clear: both;
+		border-bottom: 1px solid $border-color-gray;
+	}
+
+	.controls-start
+	{
+		display: inline-block;
+		width: 75%;
+
+		.overview
+		{
+			font-size: 0.75rem;
+		}
+	}
+
+	.controls-end
+	{
+		display: inline-block;
+		width: 25%;
+		text-align: right;
+		
+	}
+
+	.filter-control 
+	{
+		font-size: 1.2rem;
+		outline: none;
+		border: none;
+		background: transparent;
+	}
+
+	.feed-filters
+	{
+		display: block;
+		width: 100%;
+	}
+}
+
+.feed-content
+{
+    display: block;
+	clear: both;
+    margin: 0 auto;
+    padding: 0;
+    text-align: left;
+    max-width: 800px;
+}
+
+
+.tabbed-container
+{
+	display: flex;
+	width:100%;
+	background-color: #fff;
+
+	.tabbed-container-tabs
+	{
+		display: inline-block;
+		width: 51px;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		background-color: #fff;
+		border-right:1px solid $border-color-gray;
+
+		.tabbed-container-tab
+		{
+			display: block;
+			width: 50px;
+			clear: both;
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			background-color: $color-lightestgray;
+			border-bottom:1px solid $border-color-gray;
+			text-align: center;
+			font-size: 1.5rem;
+			cursor: pointer;
+
+			span {
+				display: block;
+				padding: .75rem;
+			};
+		}
+
+		.tabbed-container-tab:last-child
+		{
+			border-bottom:none;
+		}
+
+
+		.tabbed-container-tab:hover
+		{
+			background-color: $color-lightestgray-glow;
+		}
+
+		.tabbed-container-tab.active
+		{
+			width: 51px !important;
+			background-color: #fff;
+		}
+	}
+
+	.tabbed-container-content
+	{
+		display: inline-block;
+		width: calc(100% - 51px);
+		padding: .75rem;
+	}
+}

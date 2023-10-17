@@ -1,0 +1,24 @@
+@import "./../../../src/themes/constants.scss";
+
+.mediaitem-grid
+{
+	display: flex;
+	justify-content: left;
+	align-items:start;
+	flex-flow: row wrap;
+
+	.mediaitem
+	{
+		display: inline-flex;
+		flex-grow: 0;
+		flex-shrink:0;
+		overflow: hidden;
+		border-radius: 5px;
+		margin: 0.5%;
+	}
+}
+
+.mediaitem-grid.stencil
+{
+	visibility: hidden;
+}

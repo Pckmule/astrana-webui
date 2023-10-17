@@ -1,139 +1,125 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import _ from 'lodash';
 
-import { useAppSelector, useAppDispatch } from './../../app/hooks';
-import { setAuthToken, clearAuthToken, selectAuthToken} from './../../features/session/sessionSlice';
+import { DisplayMode } from '../../types/enums/displayMode';
+import { ReadyStatus } from '../../types/enums/readyStatus';
+import { AuthenticationStatus } from '../../types/enums/authenticationStatus';
 
-import { IApplicationSettings } from './../../types/objects/applicationSettings';
-import { IUserInfo } from '../../types/interfaces/user';
+import { useNavigate	} from 'react-router-dom'
 
-import TranslationService from '../../services/TranslationService';
-import UserService from '../../services/UserService';
-import AuthenticationService from "./../../services/AuthenticationService";
+import SettingsService from './../../services/SettingsService';
+import TranslationService from './../../services/TranslationService';
+import AuthenticationService from './../../services/AuthenticationService';
 
 import { Header } from './../../components/Header';
 
-import './loginpage.scss';
+import './LoginPage.scss';
 
-interface LoginPageProps {
-  settings: IApplicationSettings;
-  user: IUserInfo;
-}
-
-export interface ILoginPageState {
-  username: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-export function LoginPage({ settings, user }: LoginPageProps)
+export function LoginPage()
 {
-    const [translations, setTranslations] = React.useState<any>({ __loading: true });
+	const [loadStatus, setLoadStatus] = React.useState<ReadyStatus>(ReadyStatus.Ready);
+	const [preloadCount, setPreloadCount] = React.useState(0);
 
-    const [currentUserSettings, setCurrentUserSettings] = React.useState<any>({
-      languageCode: "zh"
-    });
+	const countPreloadCompletionAsync = () => setPreloadCount((preloadCount) => preloadCount + 1);
+
+	const [translations, setTranslations] = React.useState<any>({ __loading: true });
+
+	const [username, setUsername] = React.useState<string>("");
+	const [password, setPassword] = React.useState<string>("");
+	const [rememberMe, setRememberMe] = React.useState<boolean>(false);
+
+	const [authenticationStatus, setAuthenticationStatus] = React.useState<AuthenticationStatus>(AuthenticationStatus.Unauthenticated);
+
+	const settingsService = SettingsService();
+	const trxService = TranslationService();
+	const authenticationService = AuthenticationService();
+	
+	const hasInitialDataLoaded = () => 
+	{
+		return (loadStatus !== ReadyStatus.Loaded && preloadCount === 1);
+	}
+
+	const loadInitialData = async () => 
+	{
+		setLoadStatus(ReadyStatus.Loading);
+
+		await trxService.getTranslations(settingsService.defaults.languageCode).then((trx: any | undefined) => 
+		{
+			setTranslations(trx);
+			countPreloadCompletionAsync();
+
+		}).catch((error: Error) => { console.log(error); });
+	};
+
+	const isPageReady = () => 
+	{
+		return loadStatus === ReadyStatus.Loaded;
+	}
+	
+	if(hasInitialDataLoaded()) { setLoadStatus(ReadyStatus.Loaded); }
   
-    const authToken = useAppSelector(selectAuthToken);
-    const dispatch = useAppDispatch();
-    const [incrementAmount, setIncrementAmount] = useState('test');
+	if(loadStatus === ReadyStatus.Ready)
+	{
+		loadInitialData();
+	}
 
-    const intialState = { 
-        username: "",
-        password: "",
-        rememberMe: false
-    };
-    
-    const [state, setState] = React.useState<ILoginPageState>(intialState);
-    const [signInStatus, setSignInStatus] = React.useState<string>("");
+	const navigate = useNavigate();
 
-    const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        state.username = event.target.value;
-        setState(state);
-    };
-    
-    const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      state.password = event.target.value;
-      setState(state);
-    };
-  
-    const handleRememberMeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      state.rememberMe = event.target.checked;
-      setState(state);
-    };
+	const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setUsername(event.target.value);
+	};
+	
+	const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setPassword(event.target.value);
+	};
+	
+	const handleRememberMeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setRememberMe(event.target.checked);
+	};
+	
+	async function handleLogin() 
+	{
+		setAuthenticationStatus(AuthenticationStatus.Authenticating);
 
-    async function handleLogin() 
-    {
-        const username = state.username;
-        const password = state.password;
-        const rememberMe = state.rememberMe;
+		await authenticationService.login(username, password, rememberMe).catch((error: Error) => { console.dir(error); });
+	}
 
-        setSignInStatus("working");
+	const displayMode = !isPageReady() ? DisplayMode.Stencil : DisplayMode.Normal;
 
-        await AuthenticationService().authenticate(username, password).then((response: any) => {
-          
-            setSignInStatus("");
-            dispatch(setAuthToken(response));
+	return(
+		<React.Fragment>
+			<Header displayMode={displayMode} translations={translations} user={{}} />
+		
+			<div className="container-fluid page-content">
+				<div className="row g-0">
+					<div className="main-content col-12 col-sm-12 col-md-10 col-lg-6 col-xl-4 offset-1 offset-sm-2 offset-md-1 offset-lg-3 offset-xl-4">
+						<main>
+							<form className="login-form">
+								
+								<div className="mb-3">
+									<label htmlFor="username" className="form-label">{trxService.trx(translations, "username")}</label>
+									<input type="text" className="form-control" id="username" aria-describedby="emailHelp" defaultValue={username} onChange={handleUsernameChange} />
+									<div id="emailHelp" className="form-text">{trxService.trx(translations, "login_page_username_help")}</div>
+								</div>
 
-        }).catch((err: Error) => 
-        {
-            setSignInStatus("");
-        });
-    }
+								<div className="mb-3">
+									<label htmlFor="password" className="form-label">{trxService.trx(translations, "password")}</label>
+									<input type="password" className="form-control" id="password" defaultValue={password} onChange={handlePasswordChange} />
+								</div>
+								
+								<div className="mb-3 form-check">
+									<input type="checkbox" className="form-check-input" id="rememberMe" checked={rememberMe} onChange={handleRememberMeChange} />
+									<label className="form-check-label" htmlFor="rememberMe">{trxService.trx(translations, "remember_me")}</label>
+								</div>
+								
+								<button type="button" className="btn btn-primary" onClick={() => { handleLogin(); }}>{trxService.trx(translations, "login")}</button>
 
-    const trxService = TranslationService();
-    const userService = UserService();
-    
-    const loadInitialData = async () => 
-    {
-        setCurrentUserSettings({
-            languageCode: navigator.language
-        });
-        
-        setTranslations(await trxService.getTranslations(currentUserSettings.languageCode));
-    };
-
-    useEffect(() => {
-      loadInitialData();
-    }, []);
-
-    const isPageReady = translations.__loading ? "loading" : "ready";
-    const displayMode = !isPageReady ? "skeleton" : "normal";
-
-    return(
-      <React.Fragment>
-        <Header displayMode={displayMode} user={user} />
-    
-        <div className="container-fluid page-content">
-          <div className="row g-0">
-            <div className="main-content col-12 col-sm-12 col-md-10 col-lg-6 col-xl-4 offset-1 offset-sm-2 offset-md-1 offset-lg-3 offset-xl-4">
-              <main>
-                <form className="login-form">
-                  
-                  <div className="mb-3">
-                    <label htmlFor="username" className="form-label">Username</label>
-                    <input type="text" className="form-control" id="username" aria-describedby="emailHelp" value={state.username} onChange={handleUsernameChange} />
-                    <div id="emailHelp" className="form-text">We'll never share your username with anyone else.</div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
-                    <input type="password" className="form-control" id="password" value={state.password} onChange={handlePasswordChange} />
-                  </div>
-                  
-                  <div className="mb-3 form-check">
-                    <input type="checkbox" className="form-check-input" id="rememberMe" checked={state.rememberMe} onChange={handleRememberMeChange} />
-                    <label className="form-check-label" htmlFor="rememberMe">Remember Me</label>
-                  </div>
-                  
-                  <button type="button" className="btn btn-primary" onClick={() => { handleLogin(); }}>Login</button>
-
-                  <p>{signInStatus}</p>
-                  
-                </form>
-              </main>
-            </div>
-          </div>
-        </div>
-      </React.Fragment>
-    );
+								<p>{authenticationStatus}</p>						
+							</form>
+						</main>
+					</div>
+				</div>
+			</div>
+		</React.Fragment>
+	);
 };

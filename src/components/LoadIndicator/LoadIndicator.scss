@@ -1,42 +1,15 @@
 @import "./../../../src/themes/constants.scss";
 
-@keyframes indicator 
+.loading-indicator
 {
-  0% { transform: translate(-50%,-50%) rotate(0deg); }
-  100% { transform: translate(-50%,-50%) rotate(360deg); }
-}
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin:auto;
+    width:100%;
+    height:100%;
 
-.indicator div {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border: 20px solid $astrana-primary-color;
-  border-top-color: transparent;
-  border-radius: 50%;
+    svg{
+      vertical-align: middle;
+    }
 }
-
-.indicator div {
-  animation: indicator 1.8181818181818181s linear infinite;
-  top: 100px;
-  left: 100px
-}
-
-.load-indicator-rolling {
-  width: 200px;
-  height: 200px;
-  display: inline-block;
-  overflow: hidden;
-  background: none;
-  margin:auto;
-}
-
-.indicator {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform: translateZ(0) scale(1);
-  backface-visibility: hidden;
-  transform-origin: 0 0;
-}
-
-.indicator div { box-sizing: content-box; }

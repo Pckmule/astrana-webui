@@ -1,5 +1,7 @@
 import _ from 'lodash';
 
+import { ILookupData } from '../types/data/lookup';
+
 import ApiService from "./ApiService";
 
 export default function LookupService() 
@@ -8,11 +10,14 @@ export default function LookupService()
     {
         const endpoint = "settings/lookup/" + name.toLowerCase();
 
-        return ApiService().get(endpoint).then((response: any | undefined) =>
+        return ApiService().get(endpoint).then((response: ILookupData) =>
         {
-            const lookup = (response == null || _.isEmpty(response) || !_.isString(response)) ? response : {};
+            const data:ILookupData | null = ApiService().getDataPayload(response);
 
-            return Promise.resolve(lookup);
+            if(!data)
+                return Promise.reject(ApiService().buildNoPayloadError(name.toLowerCase()));
+
+            return Promise.resolve<ILookupData>(data);
 
         }).catch((error: Error) => 
         {
@@ -21,6 +26,6 @@ export default function LookupService()
     }
     
     return {
-      getLookup: getLookup
+      getLookup
     };
 }

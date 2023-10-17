@@ -1,61 +1,54 @@
-import React, { useState, useEffect, ChangeEvent, MouseEventHandler } from "react";
+import React, { useState } from "react";
 
-import { IPeerInformation } from '../../types/objects/peerInformation';
+import { DisplayMode } from "../../types/enums/displayMode";
 
-import ApiService from "./../../services/ApiService";
+import TranslationService from "../../services/TranslationService";
+import PeerService from "../../services/PeerService";
+
+import { Button } from "../Button";
 
 import "./ConnectPeerForm.scss";
 
 export function ConnectPeerForm(props: { 
-    displayMode?: "normal" | "skeleton";
-    title?: string,
-    buttonLabel?: string,
-    peerInformation: IPeerInformation
+	displayMode?: DisplayMode, 
+	translations: any, 
+	sourcePeerId?: string, 
+	sourcePeerFullName?: string, 
+	sourcePeerAddress?: string, 
+	buttonLabel?: string 
 }) 
 {
-    const [peerAddress, setPeerAddress] = useState<string>("localhost:44301");
+	const [peerAddress, setPeerAddress] = useState<string>("");
 
-    const retrievePosts = (peerAddress: string) => {
+	const trxService = TranslationService();
+	const peerService = PeerService();
+	
+	const handleSubmit = function()
+	{
+		peerService.sendPeerConnectionRequest(peerAddress, props.sourcePeerId, props.sourcePeerFullName, props.sourcePeerAddress).then((response: any) => 
+		{
+			console.log(response.data);
+		})
+		.catch((err: Error) => {
+			console.log(err);
+		});
+	}
 
-        const api = ApiService(`https://${peerAddress}`);
-        const endpoint = "/api/peers/connect";
-        
-        const request = {
-            peerUuid: props.peerInformation.uuid,
-            peerAddress: props.peerInformation.address,
-            peerName: props.peerInformation.firstName
-        };
+	const cssClasses: string[] = ["card", "rounded", "mb-3", "connect-peer-form"];
 
-        api.put(endpoint, request)
-            .then((response: any) => {
-                console.log(response.data);
-            })
-            .catch((err: Error) => {
-                console.log(err);
-            });
-    };
-
-    const handleSubmit = function(e: any)
-    {
-        retrievePosts(peerAddress);
-
-        e.preventDefault();
-    }
-
-    return (
-        <React.Fragment>
-        {!props.displayMode &&
-            <div className={"card rounded mb-3 connect-peer-form"}>
-                <div className="card-body">
-                    <div className="card-text">
-                        <label htmlFor="peerAddress" className="form-label">{props.title ?? "Enter a Peer Address"}</label>
-                        <input type="text" value={peerAddress} className="form-control" aria-describedby="peerAddressHelp" id="peerAddress" name="peerAddress" onChange={e => setPeerAddress(e.target.value)} />
-                        <p id="peerAddressHelp" className="form-text small">The address of the Astrana Peer you want to connect to.</p>
-                    </div>
-                    <button type="submit" className="btn btn-sm btn-primary" onClick={handleSubmit}>{props.buttonLabel ?? "Send Request"}</button>
-                </div>
-            </div>
-        }
-        </React.Fragment>
-    );
+	return (
+		<div className={cssClasses.join(" ")}>
+			<div className="card-body">
+				{props.displayMode === DisplayMode.Normal &&
+					<React.Fragment>
+						<div className="card-text">
+							<input type="text" placeholder={trxService.trx(props.translations, "enter_a_peer_address")} value={peerAddress} className="form-control" aria-describedby="peerAddressHelp" id="peerAddress" name="peerAddress" onChange={e => setPeerAddress(e.target.value)} />
+							<p id="peerAddressHelp" className="form-text small">{trxService.trx(props.translations, "enter_a_peer_address_helptext")}</p>
+						</div>
+						<Button hierarchy="primary" label={props.buttonLabel ?? trxService.trx(props.translations, "send_request")} onClick={handleSubmit} />
+					</React.Fragment>
+				}
+			</div>
+		</div>
+	);
 }

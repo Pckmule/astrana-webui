@@ -1,3 +1,5 @@
+@import "./../../../src/themes/constants.scss";
+
 $max-post-attachment-height: 300px;
 
 .feed-content-item 
@@ -65,6 +67,11 @@ $max-post-attachment-height: 300px;
             }
         }
 
+        .card-text
+        {
+            font-size: 1.2rem;
+        }
+
         .feed-content-item-attachment
         {
             position: relative;
@@ -73,114 +80,13 @@ $max-post-attachment-height: 300px;
             overflow: hidden;
             justify-content: center;
             align-items: center;
-            min-height: 100px;
             background: #eee;
             border-top:1px solid #ddd;
             user-select: none;
         }
-
-        .feed-content-item-interactions
-        {
-            position: relative;
-            display: block;
-            width: 100%;
-            overflow: hidden;
-            border-top:1px solid #ddd;
-
-            .interactions-details
-            {
-                position: relative;
-                display: flex;
-                width: 100%;
-                overflow: hidden;
-                padding: 0.25rem;
-                font-size: 0.8rem;
-                user-select: none;
-                
-                .count
-                {
-                    position: relative;
-                    display: block;
-                    align-items: center;
-                    flex-basis: 0;
-                    min-width: 0;
-                    padding: 0.5rem;
-                    user-select: none;
-                }
-
-                .count.reactions-count
-                {
-                    align-self: flex-start;
-                    flex: auto;
-                    user-select: none;
-                }
-
-                .comments-count
-                {
-                    display: block;
-                    align-self: flex-end;
-                    text-align: right;
-                    flex: initial;
-                    user-select: none;
-                }
-
-                .shares-count
-                {
-                    display: block;
-                    align-self: flex-end;
-                    text-align: right;
-                    flex: initial;
-                    user-select: none;
-                }
-            }
-
-            .actions
-            {
-                position: relative;
-                display: flex;
-                width: 100%;
-                overflow: hidden;
-                flex-direction: row;
-                padding: 0.25rem;
-                font-size: 0.9rem;
-                user-select: none;
-                
-                .action
-                {
-                    position: relative;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    flex-grow: 1;
-                    flex-basis: 0;
-                    min-width: 0;
-                    padding: 0.5rem;
-                    text-align: center;
-                    border-radius: 5px;
-                    user-select: none;
-                    cursor: pointer;
-
-                    span, i 
-                    {
-                        user-select: none;
-                        align-items: center;
-                    }
-                }
-
-                .action:hover
-                {
-                    background-color: #eee;
-                }
-
-                .action:active
-                {
-                    background-color: #eef;
-                }
-            }
-        }
     }
     
-    .skeleton 
+    .stencil 
     {
         display: inline-block;
         height: 1.1em;
@@ -211,7 +117,7 @@ $max-post-attachment-height: 300px;
         }
     }
 
-    .skeleton.x2
+    .stencil.x2
     {
         height: 1.8em;
     }

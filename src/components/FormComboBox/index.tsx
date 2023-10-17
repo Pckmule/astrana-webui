@@ -11,7 +11,7 @@ interface IComboBoxOptionData
 {
 	icon: string | undefined;
 	value: string | null;
-	text: string | undefined;
+	label: string | undefined;
 }
 
 type FormComboBoxProps = {
@@ -86,7 +86,7 @@ const FormComboBox: React.FC<FormComboBoxProps> = ({
 	const defaultOption:IComboBoxOptionData = {
 		icon: defaultValue?.icon ?? placeholderIcon ?? "",
 		value: defaultValue?.value ?? "",
-		text: defaultValue?.text ?? ""
+		label: defaultValue?.label ?? ""
 	};
 
 	const [selectedValue, setSelectedValue] = useState(defaultOption);
@@ -359,7 +359,7 @@ const FormComboBox: React.FC<FormComboBoxProps> = ({
 		<div className={ wrapperClassName ? `comboBox ${wrapperClassName}` : "comboBox" } style={style}>
 			{renderLeftElement && ( <div className="leftElement">{ renderLeftElement() }</div> )}
 			
-			{showIcon ? <span className="input-group"><span className="input-group-text" style={{borderRight: "none"}}>{buildOptionIconHtml(selectedValue.icon, (!_.isEmpty(selectedValue.text) ? selectedValue.text : selectedValue.value) ?? "")}</span> {inputHtml}</span> : <>{inputHtml}</> }
+			{showIcon ? <span className="input-group"><span className="input-group-text" style={{borderRight: "none"}}>{buildOptionIconHtml(selectedValue.icon, (!_.isEmpty(selectedValue.label) ? selectedValue.label : selectedValue.value) ?? "")}</span> {inputHtml}</span> : <>{inputHtml}</> }
 
 			{renderRightElement && (<div className="rightElement">{renderRightElement()}</div>)}
 			<div
@@ -371,8 +371,8 @@ const FormComboBox: React.FC<FormComboBoxProps> = ({
 				{options.map((option, index) => {
 					return (
 						<li	className={ getComboBoxOptionClassName(index) } key={option.value} onClick={() => selectSuggestionHandler()} onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => mouseEnterHandler(index)}>
-							{buildOptionIconHtml(option.icon, (!_.isEmpty(option.text) ? option.text : option.value) ?? "")}
-							{optionPrefix}{renderOptions ? renderOptions(option) : (_.isEmpty(option.text) ? option.value : option.text)}
+							{buildOptionIconHtml(option.icon, (!_.isEmpty(option.label) ? option.label : option.value) ?? "")}
+							{optionPrefix}{renderOptions ? renderOptions(option) : (_.isEmpty(option.label) ? option.value : option.label)}
 						</li>
 					)
 				})}

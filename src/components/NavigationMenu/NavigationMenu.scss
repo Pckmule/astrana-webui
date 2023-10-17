@@ -1,0 +1,133 @@
+@import "./../../../src/themes/constants.scss";
+
+$gray: #CCC;
+$lightgray: #DEDEDE;
+
+nav.navigation-menu
+{
+    display: block;
+
+    a {
+        text-decoration: none;
+
+        span {            
+            text-decoration: none;
+        }
+    }
+
+    ul
+    {
+        margin: 0;
+        padding: 0;
+        width:100%;
+        list-style: none;
+
+        li
+        {
+            display: flex;
+            overflow: hidden;
+            list-style: none;
+            align-items: center;
+
+            span.placeholder
+            {
+                display: flex;
+                width:100%;
+                border-radius: 5px;
+                padding:0.35rem 0.5rem;
+            }
+
+            a 
+            {
+                display: flex;
+                width:100%;
+                border-radius: 5px;
+                padding:0.35rem 0.5rem;
+                align-items: center;
+                text-decoration: none;
+            }
+
+            a:hover
+            {
+                background: $lightgray;
+                text-decoration: none;
+                
+                span {            
+                    text-decoration: none;
+                }
+            }
+
+            a.active,
+            a.active:hover
+            {
+                background: rgb(97, 205, 255);
+                color: #fff;
+                
+                span {            
+                    text-decoration: none;
+                }
+            }
+        }
+        
+        li:last-child
+        {
+            margin-bottom: 0;
+        }
+    }
+    
+    ul.axis-v
+    {
+        li
+        {
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+    }
+    
+    ul.axis-h
+    {
+        li
+        {
+            display: inline-block;
+            text-align: center;
+            width: auto;
+        }
+    }
+}
+
+.stencil
+{
+    .navigation-menu
+    {
+        ul
+        {
+            li
+            {
+                background: rgb(255,255,255);
+            }
+        }
+
+        ul.axis-v
+        {
+            li
+            {
+                .placeholder
+                {
+                    width: 100%;
+                }
+            }
+        }
+        
+        ul.axis-h
+        {
+            li
+            {
+                .placeholder
+                {
+                    width: 125px;
+                }
+            }
+        }
+    }
+}

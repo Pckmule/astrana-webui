@@ -1,0 +1,18 @@
+@import "./../../../src/themes/constants.scss";
+
+.hide
+{
+	display:none;
+}
+
+.edit-profile-photo-btn
+{
+	text-align: center;
+}
+
+.edit-profile-photo-btn.btn-placeholder
+{
+	i {
+		border-radius: 100%;
+	}
+}

@@ -1,64 +1,49 @@
 import _ from 'lodash';
-import { useEffect, useState } from 'react';
+
+import { DisplayMode } from '../../types/enums/displayMode';
+
 import { Link } from 'react-router-dom';
+import { Image } from '../Image';
+
+import TranslationService from "./../../services/TranslationService";
+
 import './profileimage.css';
 
-interface IProfileImageProps {
-  peerName: undefined | string;
-  imageAddress: undefined | string;
-  profileUrl?: undefined | null | string;
-  gender?: undefined | number;
-  width?: undefined | number;
-  height?: undefined | number;
-  lazyLoad?: boolean; 
-  ariaLabel?: string | undefined;
-}
-
-export function ProfileImage(props: IProfileImageProps) 
+export function ProfileImage(props: 
 {
-  interface IImageData {
-    peerName: string;
-    altText: string;
-    address: string;
-    profileUrl: string;
-    gender: number;
-    width: number | undefined;
-    height: number;
-    loading: "eager" | "lazy" | undefined; 
-    ariaLabel: string | undefined;
-  }
+	displayMode?: DisplayMode; 
+	translations: any;
+	imageAddress: string;
+	profileUrl?: string;
+	peerName?: string;
+	gender?: number;
+	width?: number;
+	height?: number;
+}) 
+{
+	const trxService = TranslationService();
 
-  const imageData: IImageData = {
-    peerName: props.peerName ?? "Unknown Peer",
-    address: _.isNull(props.imageAddress) || _.isEmpty(props.imageAddress) ? "/images/placeholder-profile-picture.png" : props.imageAddress!,
-    altText: _.isNull(props.imageAddress) || _.isEmpty(props.peerName) ? "Profile Picture" : "Picture of " + props.peerName,
-    profileUrl: _.isNull(props.imageAddress) || _.isEmpty(props.profileUrl) ? "" : props.profileUrl ?? "",
-    gender: props.gender ?? 0,
-    width: props.width ?? undefined,
-    height: props.height ?? 40,
-    loading: props.lazyLoad ? "lazy" : undefined,
-    ariaLabel: _.isNull(props.ariaLabel) || _.isEmpty(props.ariaLabel) ? "Peer's Profile" : props.ariaLabel
-  }
+	const defaultIfEmpty = (value?: string, defaultValue?: string) => 
+	{
+		return value && !_.isEmpty(value) ? value : defaultValue;
+	};
 
-  const loadingImage = "/images/loaders/loading.gif";
+	const profileUrl = defaultIfEmpty(props.profileUrl, undefined);
+	const gender = props.gender ?? 0;
+	const peerName = defaultIfEmpty(props.peerName, trxService.trx(props.translations, "unknown_peer"));
+	const address = defaultIfEmpty(props.imageAddress, "/images/placeholder-profile-picture.png") + "";
+	const altText = defaultIfEmpty(trxService.trx(props.translations, "picture_of").replace("{{peer_name}}", peerName), trxService.trx(props.translations, "profile_picture")) + "";
+	const ariaLabel = defaultIfEmpty(altText, trxService.trx(props.translations, "peers_profile"));
 
-  const [imageSrc, _setImageSrc] = useState(loadingImage);
+	return (
+		(!profileUrl ? 
+			<span>
+				<Image displayMode={props.displayMode} location={address} altText={altText} />
+			</span> :
 
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      _setImageSrc(imageData.address);
-    };
-    img.src = imageData.address;
-  }, [imageData.address]);
-
-  return (
-    (imageData.profileUrl === null || _.isEmpty(imageData.profileUrl) ? 
-      <span><img src={imageSrc} alt={imageData.altText} style={{height: imageData.height, width: imageData.width }} loading={imageData.loading} /></span> :
-
-      <Link to={imageData.profileUrl} aria-label={imageData.ariaLabel}>
-        <img src={imageSrc} alt={imageData.altText} style={{height: imageData.height, width: imageData.width }} loading={imageData.loading} />
-      </Link>
-    )
-  );
+			<Link to={profileUrl} aria-label={ariaLabel}>
+				<Image displayMode={props.displayMode} location={address} altText={altText} />
+			</Link>
+		)
+	);
 };

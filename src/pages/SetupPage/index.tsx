@@ -1,112 +1,66 @@
-import React, { useEffect } from 'react'
-import { useNavigate } from "react-router-dom";
+import React from 'react'
 
 import _ from 'lodash';
 import moment from 'moment';
 import 'moment-timezone';
 
+import { ReadyStatus } from '../../types/enums/readyStatus';
+import { DisplayMode } from '../../types/enums/displayMode';
+
+import { InstallStatus } from '../../types/enums/installStatus';
+import { SetupStep } from '../../types/enums/setupStatus';
+
 import { phoneCodes, genders, defaultLanguage, defaultTimeZone } from '../../constants';
-import { IQueryParameter } from '../../types/api/api';
-import { IApplicationSettings } from './../../types/objects/applicationSettings';
-import { IUserInfo } from '../../types/interfaces/user';
 import { ILanguageData } from '../../types/objects/globalization';
 import { ICountryData } from '../../types/data/country';
-import { ILookupData, ILookupOptionData } from '../../types/data/lookup';
+import { ILookupData } from '../../types/data/lookup';
+import { IDatabaseSettings, IDatabaseConnectionTestSettings } from '../../types/interfaces/databaseSettings';
 
+import SystemService from '../../services/SystemService';
+import SettingsService from './../../services/SettingsService';
+import TranslationService from './../../services/TranslationService';
+import TextService from '../../services/TextService';
 import ApiService from '../../services/ApiService';
-import TranslationsService from './../../services/TranslationService';
 import LookupService from '../../services/LookupService';
-import ReactMarkdown from 'react-markdown'
 
+import { Link, useSearchParams } from "react-router-dom";
 import { Header } from './../../components/Header';
 import FormComboBox from '../../components/FormComboBox';
 import { Icon } from '../../components/Icon';
-import { FormDropdownBox } from '../../components/FormDropdownBox';
+import { FormDropdownBox, FormDropdownSortBy } from '../../components/FormDropdownBox';
+import { LoadIndicator } from '../../components/LoadIndicator';
+import { Fireworks } from '../../components/Fireworks';
+import ReactMarkdown from 'react-markdown'
 
 import './SetupPage.scss';
 
-interface SetupPageProps {
-  settings: IApplicationSettings;
-  user: IUserInfo;
-}
-
 export interface ISetupConfiguration 
 {
-  languageCode: string;
-  regionCode: string;
-  timeZone: string;
+	languageCode: string;
+	regionCode: string;
+	timeZone: string;
 
-  acceptedTerms: boolean;
+	emailAddress: string;
+	phoneCode: string;
+	phoneNumber: string;
 
-  databaseProvider: string;
-  databaseHost: string;
-  databaseHostPort: string;
-  databaseUsername: string;
-  databasePassword: string;
-  databaseName: string;
+	username: string;
+	password: string;
+	confirmPassword: string;
 
-  emailAddress: string;
-  phoneCode: string;
-  phoneNumber: string;
-
-  username: string;
-  password: string;
-  confirmPassword: string;
-
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dateOfBirth: string;
+	firstName: string;
+	lastName: string;
+	gender: string;
+	dateOfBirth: string;
 }
 
 export interface ISetupPageState 
 {
-    setupStatus: string;
-    pageReadiness: string | "loading" | "ready"
-    installStatus: string | "gathering" | "installing" | "complete";
-    currentStep: string | "language" | "welcome" | "termsandconditions" | "localization" | "database" | "webserver" | "usercredentials" | "userinformation" | "summary";
-    progressPercentage: number;
-    languageCode: string,
-    configuration: ISetupConfiguration;
+	languageCode: string,
+	configuration: ISetupConfiguration;
 }
 
 const defaultPhoneCode = _.find(phoneCodes, (o) => { return o.value === "27" });
-
-const intialState = { 
-  setupStatus: "new",
-  pageReadiness: "loading",
-  installStatus: "gathering",
-  currentStep: "language",
-  progressPercentage: 0,
-  languageCode: navigator.language ?? defaultLanguage.code, 
-  configuration: {          
-      languageCode: navigator.language ?? defaultLanguage.code, 
-      regionCode: "",      
-      timeZone: moment.tz(moment.tz.guess()).zoneAbbr() ?? defaultTimeZone,
-
-      acceptedTerms: false,
-
-      databaseProvider: "",
-      databaseHost: "",
-      databaseHostPort: "",
-      databaseUsername: "",
-      databasePassword: "",
-      databaseName: "",
-
-      emailAddress: "",
-      phoneCode: "",
-      phoneNumber: "",
-
-      username: "",
-      password: "",
-      confirmPassword: "",
-      
-      firstName: "",
-      lastName: "",          
-      gender: genders[0].code,
-      dateOfBirth: ""
-  }
-};
 
 const minimumUsernameLength = 6;
 const minimumPasswordLength = 8;
@@ -115,937 +69,842 @@ const today = moment().format("YYYY-MM-DD");
 
 interface ISubmitResponseFailure
 {
-    itemId: string;
-    message: string;
+	itemId: string;
+	message: string;
 }
 
 interface ISubmitResponse
 {
-    data: any | null | undefined;
-    failures: ISubmitResponseFailure[] | null | undefined;
+	data: any | null | undefined;
+	failures: ISubmitResponseFailure[] | null | undefined;
 }
 
-export function SetupPage({ settings, user }: SetupPageProps) 
+export function SetupPage() 
 {
-    const [state, setState] = React.useState<ISetupPageState>(intialState);
-    const [translations, setTranslations] = React.useState<any>({});
-    const [languages, setLanguages] = React.useState<ILanguageData[]>([]);    
-    const [countries, setCountries] = React.useState<ICountryData[]>([]);
-    
-    const [licenseText, setLicenseText] = React.useState<string>("");
-    
-    const lookupInitialState = { label: "", trxCode: "", options: []};
-    const [databaseProviderLookup, setDatabaseProviderLookup] = React.useState<ILookupData>(lookupInitialState);
-    const [genderLookup, setGenderLookup] = React.useState<ILookupData>(lookupInitialState);
-    
-    const [currentDatabaseSettings, setCurrentDatabaseSettings] = React.useState<any>(false);
+	const systemService = SystemService();
+	const settingsService = SettingsService();
+	const trxService = TranslationService();
+	const textService = TextService();
+	const lookupService = LookupService();
+	
+	const [searchParams] = useSearchParams();
 
-    const [databaseConnectionTestStatus, setDatabaseConnectionTestStatus] = React.useState<string>("complete");
-    const [databaseConnectionTestResult, setDatabaseConnectionTestResult] = React.useState<boolean>(false);
-        
-    const [submitResponse, setSubmitResponse] = React.useState<ISubmitResponse>({ data: {}, failures: [] });
+	const getDisplayLanguageCode = () => 
+	{
+		let code = searchParams.get("lc");
+		
+		if(!code || _.isEmpty(code))
+		{
+			code = navigator.language + ""; 
+		}
+		
+		if(!code || _.isEmpty(code))
+		{
+			code = settingsService.defaults.languageCode
+		}
+		
+		if(!code || _.isEmpty(code))
+		{
+			code = defaultLanguage.code + ""
+		}
+	
+		return code;	
+	};
 
-    const getCurrentState = function()
-    {
-        return JSON.parse(JSON.stringify(state));
-    };
-    
-    const databaseOverrideRequired = !currentDatabaseSettings || 
-          _.isEmpty(currentDatabaseSettings.databaseProvider) || 
-          _.isEmpty(currentDatabaseSettings.connectionString.hostAddress) || 
-          _.isEmpty(currentDatabaseSettings.connectionString.hostAddressPort) || 
-          _.isEmpty(currentDatabaseSettings.connectionString.userId) || 
-          _.isEmpty(currentDatabaseSettings.connectionString.password) || 
-          _.isEmpty(currentDatabaseSettings.connectionString.databaseName);
-    
-    
-      useEffect(() => {
-        loadInitialData();
-      }, []);
-      
-    const loadInitialData = async () => 
-    {
-        await getSetupStatus();
-        await loadLicense();
-        
-        await loadLanguages();
-        await loadTrx(state.configuration.languageCode);
-        
-        await loadCountries();
+	const [loadStatus, setLoadStatus] = React.useState<ReadyStatus>(ReadyStatus.Ready);
+	const [preloadCount, setPreloadCount] = React.useState(0);
 
-        await loadDatabaseProviderLookup();
-        await loadGenderLookup();
-        
-        await loadCurrentDatabaseSettings();
-    }
-    
-    const getSetupStatus = async () => 
-    {
-        return await ApiService().getAll("system/setup/status")
-          .then((response: any | undefined) => 
-          {
-              state.setupStatus = response.toLowerCase();
-              setState(state);
-          })
-          .catch((error: Error | undefined) => {
-              console.log(error);
-          });
-    }
-    
-    const loadCurrentDatabaseSettings = async () => 
-    {
-        return await ApiService().getAll("system/setup/database/settings").then((response: any) => 
-        {
-            setCurrentDatabaseSettings(response.data);
+	const countPreloadCompletionAsync = () => setPreloadCount((preloadCount) => preloadCount + 1);
 
-            state.configuration.databaseProvider = response.data.databaseProvider;
-            state.configuration.databaseHost = response.data.connectionString.hostAddress;
-            state.configuration.databaseHostPort = response.data.connectionString.hostAddressPort;
-            state.configuration.databaseUsername = response.data.connectionString.userId;
-            state.configuration.databasePassword = response.data.connectionString.password;
-            state.configuration.databaseName = response.data.connectionString.databaseName;
-            setState(state);
-        })
-        .catch((error: Error) => {
-            console.log(error);
-        });
-    }
-    
-    const loadLanguages = async () => 
-    {
-        return await ApiService().getAll("internationalization/languages")
-          .then((response: any | undefined) => 
-          {
-              setLanguages(response.data.data);
-              setDocumentLanguage();
-          })
-          .catch((error: Error | undefined) => {
-              console.log(error);
-          });
-    }
-    
-    const loadTrx = async (languageCode: string) => 
-    {
-          return await TranslationsService().loadTranslations(languageCode)
-            .then((response: any | undefined) => 
-            {                  
-                setTranslations(response);
-            })
-            .catch((error: Error | undefined) => {
-                console.log(error);
-            });
-    }
-    
-    const trx = function (translationKey: string, defaultValue?: string | undefined | null) 
-    {
-        const translation = translations[translationKey];
+	const [translations, setTranslations] = React.useState<any>({ __loading: true });
+	
+	const [setupStatus, setSetupStatus] = React.useState<string>("unknown");
+	const [languages, setLanguages] = React.useState<ILanguageData[]>([]);	
+	const [countries, setCountries] = React.useState<ICountryData[]>([]);
+	
+	const [languageCode, setLanguageCode] = React.useState<string>(getDisplayLanguageCode());
+	const [licenseText, setLicenseText] = React.useState<string>("");
+	
+	const lookupInitialState = { label: "Loading", trxCode: "loading", options: []}; // Move out into central file
+	const [databaseProviderLookup, setDatabaseProviderLookup] = React.useState<ILookupData>(lookupInitialState);
+	const [genderLookup, setGenderLookup] = React.useState<ILookupData>(lookupInitialState);
+	
+	const [installStatus, setInstallStatus] = React.useState<InstallStatus>(InstallStatus.GatheringDetails);
+	const [currentStep, setCurrentStep] = React.useState<SetupStep>(SetupStep.Language);
+	const [progressPercentage, setProgressPercentage] = React.useState<number>(0);
+	
+	const [regionCode, setRegionCode] = React.useState<string>("");	
+	const [timeZone, setTimeZone] = React.useState<string>(moment.tz(moment.tz.guess()).zoneAbbr() ?? defaultTimeZone);
 
-        if(translation)
-          return translation;
+	const [emailAddress, setEmailAddress] = React.useState<string>("");
+	const [phoneCode, setPhoneCode] = React.useState<string>("");
+	const [phoneNumber, setPhoneNumber] = React.useState<string>("");
 
-        if(defaultValue && !_.isEmpty(defaultValue))
-          return defaultValue;
+	const [username, setUsername] = React.useState<string>("");
+	const [password, setPassword] = React.useState<string>("");
+	const [confirmPassword, setConfirmPassword] = React.useState<string>("");
 
-        return translationKey;
-    }
-    
-    const loadLicense = async () => 
-    {
-        const parameters: IQueryParameter[] = [
-          { key: "languageCode", value: state.configuration.languageCode },
-          { key: "format", value: "markdown" }
-        ];
+	const [firstName, setFirstName] = React.useState<string>("");
+	const [lastName, setLastName] = React.useState<string>("");
+	const [gender, setGender] = React.useState<string>(genders[0].code);
+	const [dateOfBirth, setDateOfBirth] = React.useState<string>("");
 
-        return await ApiService().get("legal/license", undefined, parameters)
-          .then((response: string) => 
-          {
-              setLicenseText(response);
-          })
-          .catch((error: Error | undefined) => {
-              console.log(error);
-          });
-    }
+	const [currentDatabaseSettings, setCurrentDatabaseSettings] = React.useState<any>(false);
 
-    const loadDatabaseProviderLookup = async () => 
-    {
-        return await LookupService().getLookup("DatabaseProvider")
-            .then((response: any | undefined) => 
-            {                  
-                setDatabaseProviderLookup(response.data);        
-            })
-            .catch((error: Error | undefined) => {
-                console.log(error);
-            });
-    }
+	const [databaseProvider, setDatabaseProvider] = React.useState<string>("");
+	const [databaseHost, setDatabaseHost] = React.useState<string>("");
+	const [databaseHostPort, setDatabaseHostPort] = React.useState<string>("");
+	const [databaseUsername, setDatabaseUsername] = React.useState<string>("");
+	const [databasePassword, setDatabasePassword] = React.useState<string>("");
+	const [databaseName, setDatabaseName] = React.useState<string>("");
 
-    const loadGenderLookup = async () => 
-    {
-        return await LookupService().getLookup("Gender")
-            .then((response: any | undefined) => 
-            {                  
-                setGenderLookup(response.data);        
-            })
-            .catch((error: Error | undefined) => {
-                console.log(error);
-            });
-    }
+	const [databaseConnectionTestStatus, setDatabaseConnectionTestStatus] = React.useState<string>("complete");
+	const [databaseConnectionTestResult, setDatabaseConnectionTestResult] = React.useState<boolean>(false);
+		
+	const [acceptedTerms, setAcceptedTerms] = React.useState<boolean>(false);
 
-    const loadCountries = async () => 
-    {
-        const parameters: IQueryParameter[] = [
-          { key: "pageSize", value: "250"}
-        ];
+	const [submitResponse, setSubmitResponse] = React.useState<ISubmitResponse>({ data: {}, failures: [] });
 
-        return await ApiService().get("system/countries", undefined, parameters)
-          .then((response: any | undefined) => 
-          {
-              console.log("set countries")
+	const hasInitialDataLoaded = () => 
+	{
+		return (loadStatus !== ReadyStatus.Loaded && preloadCount === 8);
+	}
 
-              setCountries(response.data);
-          })
-          .catch((error: Error | undefined) => {
-              console.log(error);
-          });
-    }
+	const loadInitialData = async () => 
+	{
+		setLoadStatus(ReadyStatus.Loading);
 
-    const setDocumentLanguage = () => 
-    {
-      const currentLanguage = getCurrentLanguage();
+		var displayLanguageCode = getDisplayLanguageCode();
 
-      if(currentLanguage && currentLanguage.twoLetterCode)
-      {
-          document.documentElement.lang = currentLanguage.twoLetterCode;
-          document.documentElement.dir = getTextDirection(currentLanguage.direction);
-      }
-    };
+		await trxService.getTranslations(displayLanguageCode).then((trx: any | undefined) => 
+		{
+			setTranslations(trx);
+			countPreloadCompletionAsync();
 
-    const handleLanguageCodeChange = function(event: React.ChangeEvent<HTMLSelectElement>)
-    {
-      state.configuration.languageCode = event.target.value;
-      setState(state);
-      
-      setDocumentLanguage();
-      loadTrx(event.target.value);
-      loadLicense();
-    };
-    
-    const handleRegionCodeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      const state = getCurrentState();
-      state.configuration.regionCode = event.target.value;
-      setState(state);
-    };
+		}).catch((error: Error) => { console.log(error); });
 
-    const handleTimeZoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.timeZone = event.target.value;
-      setState(state);
-    };
+		await systemService.getLicense(displayLanguageCode).then((licenseText: string) => 
+		{
+			setLicenseText(licenseText);
+			countPreloadCompletionAsync();
+		
+		}).catch((error: Error) => { console.log(error); });
 
-    const handleTermsAndConditionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.acceptedTerms = event.target.checked;
-      setState(state);
-    };
-    
-    const handleDatabaseProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      const state = getCurrentState();
-      state.configuration.databaseProvider = event.target.value;
-      setState(state);
-    };
+		await systemService.getSetupStatus().then(async (status: string) => { 
+			setSetupStatus(status); 
+			countPreloadCompletionAsync();
 
-    const getSelectedDatabaseProviderIcon = () => 
-    {
-        const matches = _.filter(databaseProviderLookup.options, (item) => { return item.value === defaultWhenEmpty(state.configuration.databaseProvider, currentDatabaseSettings.databaseProvider) });
-        
-        return matches.length > 0 ? matches[0].iconAddress : "";
-    }
-    
-    const handleDatabaseHostChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.databaseHost = event.target.value;
-      setState(state);
-    };
+			if(status.toLowerCase() === "complete")
+			{
+				countPreloadCompletionAsync();
+			}
+			else
+			{
+				await systemService.getSetupDatabaseSettings().then((databaseSettings: IDatabaseSettings) => 
+				{ 
+					setCurrentDatabaseSettings(databaseSettings);
+		
+					setDatabaseProvider(databaseSettings.databaseProvider);
+					setDatabaseHost(databaseSettings.connectionString.hostAddress);
+					setDatabaseHostPort(databaseSettings.connectionString.hostAddressPort);
+					setDatabaseUsername(databaseSettings.connectionString.userId);
+					setDatabasePassword(databaseSettings.connectionString.password);
+					setDatabaseName(databaseSettings.connectionString.databaseName);
+		
+					countPreloadCompletionAsync();
+		
+				}).catch((error: Error) => { console.log(error); });
+			}
+		
+		}).catch((error: Error) => { console.log(error); });
+		
+		await systemService.getLanguages().then((languages: ILanguageData[]) => { setLanguages(languages); setDocumentLanguage(); countPreloadCompletionAsync(); }).catch((error: Error) => { console.log(error); });
 
-    const handleDatabaseHostPortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.databaseHostPort = event.target.value;
-      setState(state);
-    };
-    
-    const handleDatabaseUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.databaseUsername = event.target.value;
-      setState(state);
-    };
-    
-    const handleDatabasePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.databasePassword = event.target.value;
-      setState(state);
-    };
-    
-    const handleDatabaseNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.databaseName = event.target.value;
-      setState(state);
-    };
+		await systemService.getCountries().then((countries: ICountryData[]) => { setCountries(countries);	countPreloadCompletionAsync(); }).catch((error: Error) => { console.log(error); });
 
-    const testDatabaseConnection = () => 
-    {
-        setDatabaseConnectionTestStatus("working");
+		await lookupService.getLookup("Gender").then((lookup: ILookupData) => { setGenderLookup(lookup); countPreloadCompletionAsync(); }).catch((error: Error) => { console.log(error); });
+		
+		await lookupService.getLookup("DatabaseProvider").then((lookup: ILookupData) => { setDatabaseProviderLookup(lookup); countPreloadCompletionAsync(); }).catch((error: Error) => { console.log(error); });
 
-        const state = getCurrentState();
+		await settingsService.getAll().then(async (settings: any | undefined) => 
+		{
+		}).catch((error: Error) => { console.log(error); });
+	};
 
-        const databaseSettings = {
-          databaseProvider: defaultWhenEmpty(state.configuration.databaseProvider, currentDatabaseSettings.databaseProvider),
-          databaseName: defaultWhenEmpty(state.configuration.databaseName, currentDatabaseSettings.databaseName),
-          databaseHost: defaultWhenEmpty(state.configuration.databaseHost, currentDatabaseSettings.databaseHost),
-          databaseHostPort: defaultWhenEmpty(state.configuration.databaseHostPort, currentDatabaseSettings.databaseHostPort),
-          databaseUsername: defaultWhenEmpty(state.configuration.databaseUsername, currentDatabaseSettings.databaseUsername),
-          databasePassword: defaultWhenEmpty(state.configuration.databasePassword, currentDatabaseSettings.databasePassword)
-        }
-
-        console.dir(databaseSettings);
-
-        ApiService().post("system/setup/database/test", databaseSettings)
-          .then((response: any | undefined) => 
-          {
-              setCurrentDatabaseSettings(response.data);  
-
-              setTimeout(() => {
-                setDatabaseConnectionTestResult(true);
-                setDatabaseConnectionTestStatus("complete");
-              }, 1000);
-          })
-          .catch((error: Error | undefined) => {
-              console.log(error);
-
-              setTimeout(() => {
-                setDatabaseConnectionTestResult(false);
-                setDatabaseConnectionTestStatus("complete");
-              }, 1000);
-          });
-    };
-    
-    const handleEmailAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const state = getCurrentState();
-        state.configuration.emailAddress = event.target.value;
-        setState(state);
-    };
-    
-    const handlePhoneCodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.phoneCode = event.target.value;
-      setState(state);
-    };
-
-    const handlePhoneCodeSelect = (value: string) => {
-      const state = getCurrentState();
-      state.configuration.phoneCode = value;
-      setState(state);
-    };
-
-    const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.phoneNumber = event.target.value;
-      setState(state);
-    };
-
-    const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const state = getCurrentState();
-        state.configuration.username = event.target.value;
-        setState(state);
-    };
-    
-    const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.password = event.target.value;
-      setState(state);
-    };
+	const isPageReady = () => 
+	{
+		return loadStatus === ReadyStatus.Loaded;
+	}
+	
+	if(hasInitialDataLoaded()) { setLoadStatus(ReadyStatus.Loaded); }
   
-    const handleConfirmPasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.confirmPassword = event.target.value;
-      setState(state);
-    };
-  
-    const handleFirstNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.firstName = event.target.value;
-      setState(state);
-    };
-  
-    const handleLastNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.lastName = event.target.value;
-      setState(state);
-    };
-  
-    const handleDateOfBirthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const state = getCurrentState();
-      state.configuration.dateOfBirth = event.target.value;
-      setState(state);
-    };
-  
-    const handleGenderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      const state = getCurrentState();
-      state.configuration.gender = event.target.value;
-      setState(state);
-    };
+	if(loadStatus === ReadyStatus.Ready)
+	{
+		loadInitialData();
+	}
 
-    const switchFieldType = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
-      event.target.type = type;
-    };
+	const databaseOverrideRequired = !currentDatabaseSettings || 
+			_.isEmpty(currentDatabaseSettings.databaseProvider) || 
+			_.isEmpty(currentDatabaseSettings.connectionString.hostAddress) || 
+			_.isEmpty(currentDatabaseSettings.connectionString.hostAddressPort) || 
+			_.isEmpty(currentDatabaseSettings.connectionString.userId) || 
+			_.isEmpty(currentDatabaseSettings.connectionString.password) || 
+			_.isEmpty(currentDatabaseSettings.connectionString.databaseName);
+	
+	const loadTrx = async (languageCode: string) => 
+	{
+		return await trxService.loadTranslations(languageCode).then((response: any | undefined) => 
+		{					
+			setTranslations(response);
 
-    const setInstallStatus = (status: string) => {
-      const state = getCurrentState();      
-      state.installStatus = status;      
-      setState(state);
-    };
+		}).catch((error: Error) => { console.log(error); }); 
+	}
 
-    const goToStep = (stepName: string, progressPercentage?: number) => 
-    {
-        const state = getCurrentState();
-        
-        state.currentStep = stepName;
-        
-        if(progressPercentage)
-          state.progressPercentage = progressPercentage;
-      
-        setState(state);
-    };
+	const setDocumentLanguage = () => 
+	{
+		const currentLanguage = getCurrentLanguage();
 
-    function validateForm(event: React.FormEvent<HTMLFormElement>, stepName: string, progressPercentage?: number) 
-    {
-      event.preventDefault();
-      event.stopPropagation();
+		if(currentLanguage && currentLanguage.twoLetterCode)
+		{
+			document.documentElement.lang = currentLanguage.twoLetterCode;
+			document.documentElement.dir = textService.getTextDirection(currentLanguage.direction);
+		}
+	};
 
-      const form = event.currentTarget;
+	const handleLanguageCodeChange = async function(event: React.ChangeEvent<HTMLSelectElement>)
+	{
+		setLanguageCode(event.target.value);
+		
+		setDocumentLanguage();
+		loadTrx(event.target.value);
+		
+		await systemService.getLicense(event.target.value).then((licenseText: string) => 
+		{
+			setLicenseText(licenseText);
 
-      if (form.checkValidity()) { goToStep(stepName, progressPercentage); }
+		}).catch((error: Error) => { console.log(error); });
+	};
+	
+	const handleRegionCodeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+		setRegionCode(event.target.value);
+	};
 
-      form.classList.add('was-validated');
-    }
+	const handleTimeZoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setTimeZone(event.target.value);
+	};
 
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) 
-    {
-      setInstallStatus("installing");
+	const handleTermsAndConditionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setAcceptedTerms(event.target.checked);
+	};
+	
+	const handleDatabaseProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {		
+		setDatabaseProvider(event.target.value);
+	};
 
-      event.preventDefault();
-      event.stopPropagation();
+	const getSelectedDatabaseProviderIcon = () => 
+	{
+		const matches = _.filter(databaseProviderLookup.options, (item) => { return item.value === defaultWhenEmpty(databaseProvider, currentDatabaseSettings.databaseProvider) });
+		
+		return matches.length > 0 ? matches[0].iconAddress : "";
+	}
+	
+	const handleDatabaseHostChange = (event: React.ChangeEvent<HTMLInputElement>) => {		
+		setDatabaseHost(event.target.value);
+	};
 
-      const form = event.currentTarget;
+	const handleDatabaseHostPortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setDatabaseHostPort(event.target.value);
+	};
+	
+	const handleDatabaseUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setDatabaseUsername(event.target.value);		
+	};
+	
+	const handleDatabasePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setDatabasePassword(event.target.value);
+	};
+	
+	const handleDatabaseNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setDatabaseName(event.target.value);
+	};
 
-      if (form.checkValidity()) 
-      {
-         const setupRequest = {
-              instanceUsername: state.configuration.username,
-              instanceUserEmailAddress: state.configuration.emailAddress,
-              instanceUserPassword: state.configuration.password,
-              
-              instanceUserFirstName: state.configuration.firstName,
-              instanceUserLastName: state.configuration.lastName,
-              
-              instanceUserDateOfBirth: state.configuration.dateOfBirth,
-              instanceUserGender: state.configuration.gender,
+	const testDatabaseConnection = () => 
+	{
+		setDatabaseConnectionTestStatus("working");
 
-              instancePhoneCountryCodeISO: state.configuration.phoneCode,
-              instancePhoneNumber: state.configuration.phoneNumber,
+		const databaseSettings: IDatabaseConnectionTestSettings = {
+			databaseProvider: defaultWhenEmpty(databaseProvider, currentDatabaseSettings.databaseProvider),
+			databaseName: defaultWhenEmpty(databaseName, currentDatabaseSettings.databaseName),
+			databaseHost: defaultWhenEmpty(databaseHost, currentDatabaseSettings.databaseHost),
+			databaseHostPort: defaultWhenEmpty(databaseHostPort, currentDatabaseSettings.databaseHostPort),
+			databaseUsername: defaultWhenEmpty(databaseUsername, currentDatabaseSettings.databaseUsername),
+			databasePassword: defaultWhenEmpty(databasePassword, currentDatabaseSettings.databasePassword)
+		}
 
-              instanceLanguageCode: state.configuration.languageCode,              
-              instanceCountryCode: state.configuration.regionCode,
-              instanceTimeZone: state.configuration.timeZone
-          }
+		systemService.testDatabaseConnection(databaseSettings).then((response: any | undefined) => 
+		{
+			setTimeout(() => {
+				setDatabaseConnectionTestResult(true);
+				setDatabaseConnectionTestStatus("complete");
+			}, 1000);
+		})
+		.catch((error: Error) => {
+			console.log(error);
 
-          console.dir(setupRequest);
+			setTimeout(() => {
+				setDatabaseConnectionTestResult(false);
+				setDatabaseConnectionTestStatus("complete");
+			}, 1000);
+		});
+	};
+	
+	const handleEmailAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setEmailAddress(event.target.value);
+	};
+	
+	const handlePhoneCodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setPhoneCode(event.target.value);
+	};
 
-          ApiService().post("system/setup", setupRequest).then((response: any) => 
-          { 
-              console.log(response.data);
-              setInstallStatus("complete");
-          })
-          .catch((err: any) => {
+	const handlePhoneCodeSelect = (value: string) => {
+		setPhoneCode(value);
+	};
 
-            setSubmitResponse(
-            {
-                data: err!.response!.data,
-                failures: err!.response!.data!.failures
-            });
+	const handlePhoneNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setPhoneNumber(event.target.value);
+	};
 
-            setInstallStatus("gathering");
-          });
-      }
+	const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setUsername(event.target.value);
+	};
+	
+	const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setPassword(event.target.value);
+	};
+	
+	const handleConfirmPasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setConfirmPassword(event.target.value);
+	};
+	
+	const handleFirstNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setFirstName(event.target.value);
+	};
+	
+	const handleLastNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setLastName(event.target.value);
+	};
+	
+	const handleDateOfBirthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setDateOfBirth(event.target.value);
+	};
+	
+	const handleGenderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+		setGender(event.target.value);
+	};
 
-      form.classList.add('was-validated');
-    }
+	const switchFieldType = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
+		event.target.type = type;
+	};
 
-    const progressBarHtml = <div className="form-section-progress">
-      
-        <div className="row">
-          <div className="col-7">
-            <label htmlFor="setupProgress" className="float-end">{trx("progress")}:</label>
-          </div>
-          
-          <div className="col-5">
-            <div id="setupProgress" className="progress">
-              <div className={state.installStatus === "installing" ? "progress-bar progress-bar-striped progress-bar-animated" : "progress-bar"} role="progressbar" style={{width: state.progressPercentage + "%"}} aria-valuenow={state.progressPercentage} aria-valuemin={0} aria-valuemax={100}></div>
-            </div>
-          </div>
-        </div>
-    </div>
+	const goToStep = (step: SetupStep, percentageComplete?: number) => 
+	{		
+		if(percentageComplete)
+			setProgressPercentage(percentageComplete);
 
-    const calculateDefaultLanguage = function (languageCode: string) 
-    {
-        languageCode = languageCode.toUpperCase();
+		setCurrentStep(step);
+	};
 
-        if(languages.length > 0)
-        {
-            let language = _.find(languages, (o) => o.twoLetterCode === languageCode);
+	function validateForm(event: React.FormEvent<HTMLFormElement>, step: SetupStep, percentageComplete?: number) 
+	{
+		event.preventDefault();
+		event.stopPropagation();
 
-            if(!language)
-            {
-              const parts = languageCode.split("-"); 
-              language = _.find(languages, (o) => o.twoLetterCode === parts[0]);
-            }
+		const form = event.currentTarget;
 
-            if(language)
-              return language.twoLetterCode;
-        }
+		if (form.checkValidity()) { goToStep(step, percentageComplete); }
 
-        return languageCode;
-    }
+		form.classList.add('was-validated');
+	}
 
-    const getCurrentLanguage = function()
-    {
-        if(languages.length > 0)
-        {
-            return _.find(languages, (o) => o.twoLetterCode === state.configuration.languageCode);
-        }
-        
-        return null;
-    }
+	function handleSubmit(event: React.FormEvent<HTMLFormElement>) 
+	{
+		setInstallStatus(InstallStatus.Installing);
 
-    const getTextDirection = function(direction: string)
-    {
-        switch(direction.toLowerCase())
-        {
-            case 'ltr':
-              return 'ltr';
+		event.preventDefault();
+		event.stopPropagation();
 
-            case 'rtl':
-              return 'rtl';
+		const form = event.currentTarget;
 
-            default:
-              return 'auto';
-        }
-    }
+		if (form.checkValidity()) 
+		{
+			const setupRequest = {
+				instanceUsername: username,
+				instanceUserEmailAddress: emailAddress,
+				instanceUserPassword: password,
 
-    const defaultWhenEmpty = (value: string, defaultValue: string) =>
-    {
-        return !value || value === undefined || _.isEmpty(value) ? defaultValue : value;
-    }
+				instanceUserFirstName: firstName,
+				instanceUserLastName: lastName,
 
-    const maySetup = (state.setupStatus === "new" || state.setupStatus === "inprogress");   
+				instanceUserDateOfBirth: dateOfBirth,
+				instanceUserGender: gender,
 
-    const isPageReady = maySetup && languages.length > 0 && translations ? "ready" : "loading";
-    const mode = !isPageReady ? "skeleton" : "normal";
+				instancePhoneCountryCodeISO: phoneCode,
+				instancePhoneNumber: phoneNumber,
 
-    const navigate = useNavigate();
+				instanceLanguageCode: languageCode,				
+				instanceCountryCode: regionCode,
+				instanceTimeZone: timeZone
+			}
 
-    useEffect(() => 
-    {
-      if(!maySetup)
-      {
-        navigate('/login', { replace: true });
-      }
-    }, []);
-  
-    if(!maySetup)
-    {
-        return ( <React.Fragment></React.Fragment> );
-    }
-    
-    const textDirection = getTextDirection(getCurrentLanguage()?.direction ?? "LTR");
-    const formSectionHeaderClassNames = `form-section-head ${textDirection}`;
-    const formSectionBodyClassNames = `form-section-body ${textDirection}`;
-    const formSectionFooterClassNames = `form-section-foot ${textDirection}`;
+			ApiService().post("system/setup", setupRequest).then((response: any) => 
+			{ 
+				setInstallStatus(InstallStatus.Complete);
+				goToStep(SetupStep.Finished, 100);
 
-    return (
-      <React.Fragment>
-        <Header displayMode={mode} user={user} />
-    
-        <div className="container-fluid page-content">
-          <div className="row g-0">
-            <div className="main-content col-12 col-sm-12 col-md-10 col-lg-6 col-xl-4 offset-1 offset-sm-2 offset-md-1 offset-lg-3 offset-xl-4">
-              { isPageReady === "ready" &&  
-                <main>                
-                  { state.currentStep === "language" && 
-                      
-                      <div className="form-section card rounded">
-                        
-                        <form noValidate onSubmit={(e) => validateForm(e, "welcome", 7)}>
-                          <div className={formSectionBodyClassNames}>
-                          
-                              <div className="form-field">
-                                <label className="visually-hidden" htmlFor="languageCode">{trx("language")}</label>
-                                <FormDropdownBox id="languageCode" options={languages} placeholder="Language" value={calculateDefaultLanguage(state.configuration.languageCode)} sortBy="alpha" onChange={handleLanguageCodeChange} translations={[]} aria-describedby="languageCodeHelp" size={3} />
-                                <div id="languageCodeHelp" className="visually-hidden">Language help...</div>
-                              </div>
+			}).catch((err: any) => 
+			{
+				setSubmitResponse({
+					data: err!.response!.data,
+					failures: err!.response!.data!.failures
+				});
 
-                          </div>
+				setInstallStatus(InstallStatus.GatheringDetails);
+			});
+		}
 
-                          <div className={formSectionFooterClassNames}>
-                            <button type="submit" className="btn btn-sm btn-primary float-end"><Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                      </div>
-                    }
-                    
-                    { state.currentStep === "welcome" && 
-                      
-                      <div className="form-section card rounded">
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("astrana")} {trx("heading_setup_wizard")}</div>
-                        
-                        <form noValidate onSubmit={(e) => validateForm(e, "termsandconditions", 15)}>
-                          <div className={formSectionBodyClassNames}>
-                            {trx("setup_wizard_summary")}
-                          </div>
+		form.classList.add('was-validated');
+	}
 
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("language")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_terms_and_conditions")} <Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                        
-                      </div>
-                    }
+	const progressBarHtml = <div className="form-section-progress">
+		
+		<div className="row">
+			<div className="col-7">
+				<label htmlFor="setupProgress" className="float-end">{trxService.trx(translations, "progress")}:</label>
+			</div>
+			
+			<div className="col-5">
+				<div id="setupProgress" className="progress">
+					<div className={installStatus === InstallStatus.Installing ? "progress-bar progress-bar-striped progress-bar-animated" : "progress-bar"} role="progressbar" style={{width: progressPercentage + "%"}} aria-valuenow={progressPercentage} aria-valuemin={0} aria-valuemax={100}></div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-                    { state.currentStep === "termsandconditions" && 
-                      
-                      <div className="form-section card rounded">
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("heading_terms_and_conditions")}</div>
-                        
-                        <form noValidate onSubmit={(e) => validateForm(e, "localization", 26)}>
-                          <div className={formSectionBodyClassNames}>
-                            <div className="textblock">
-                              <ReactMarkdown>{licenseText}</ReactMarkdown>
-                            </div>
-                            
-                            <div className="form-field">
-                              <input className="form-check-input me-2" type="checkbox" value="" id="acceptTerms" checked={state.configuration.acceptedTerms} onChange={handleTermsAndConditionsChange} required autoComplete="off" />
-                              <label className="form-check-label" htmlFor="acceptTerms"><b>{trx("accept_astrana_toc")}</b></label>
-                            </div>  
-                          </div>
+	const calculateDefaultLanguage = function (languageCode: string) 
+	{
+		languageCode = languageCode.toUpperCase();
 
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("welcome")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_localization")} <Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                      </div>
-                    }
+		if(languages.length > 0)
+		{
+			let language = _.find(languages, (o) => o.twoLetterCode === languageCode);
 
-                    { state.currentStep === "localization" && 
-                    
-                      <div className="form-section card rounded">                      
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("heading_culture_settings")}</div>
-                        
-                        <form noValidate onSubmit={(e) => validateForm(e, "database", 37)}>
-                          <div className={formSectionBodyClassNames}>
-                          
-                              <div className="form-field">
-                                <label className="visually-hidden" htmlFor="regionCountry">{trx("region")} / {trx("country")}</label>
-                                <FormDropdownBox id="countryCode" options={countries} placeholder={trx("region") + "/" + trx("country")} value={state.configuration.regionCode} sortBy="alpha" onChange={handleRegionCodeChange} translations={[]} aria-describedby="regionRegionHelp" />
-                              </div> 
+			if(!language)
+			{
+				const parts = languageCode.split("-"); 
+				language = _.find(languages, (o) => o.twoLetterCode === parts[0]);
+			}
 
-                              <div className="form-field">
-                                <label className="visually-hidden" htmlFor="timeZone">{trx("time_zone")}</label>
-                                <input type="text" className="form-control" id="timeZone" placeholder={trx("time_zone")} aria-describedby="timeZoneHelp" value={state.configuration.timeZone} onChange={handleTimeZoneChange} />
-                              </div>                        
-                          </div>
+			if(language)
+				return language.twoLetterCode;
+		}
 
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("termsandconditions")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_database")} <Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                      </div>
-                    }
+		return languageCode;
+	}
 
-                    { state.currentStep === "database" && 
-                      <div className="form-section card rounded">
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>
-                          <h1>{trx("heading_database")}</h1>
-                          <span className="advanced-options float-end">
-                            <span className="form-check form-switch">
-                              <input className="form-check-input" type="checkbox" id="enableDatabaseAdvanvedOptions" />
-                              <label className="form-check-label" htmlFor="enableDatabaseAdvanvedOptions">{trx("advanced")}</label>
-                            </span>
-                          </span>
-                        </div>
+	const getCurrentLanguage = function()
+	{
+		if(languages.length > 0)
+		{
+			return _.find(languages, (o) => o.twoLetterCode === languageCode);
+		}
+		
+		return null;
+	}
 
-                        <form noValidate onSubmit={(e) => validateForm(e, "webserver", 48)}>
-                          <div className={formSectionBodyClassNames}>
+	const defaultWhenEmpty = (value: string, defaultValue: string) =>
+	{
+		return !value || value === undefined || _.isEmpty(value) ? defaultValue : value;
+	}
+	
+	const textDirection = textService.getTextDirection(getCurrentLanguage()?.direction ?? "LTR");
+	
+	const displayMode = !hasInitialDataLoaded() ? DisplayMode.Stencil : DisplayMode.Normal;
+	
+	const isSetupComplete = setupStatus.toLowerCase() === "complete";
 
-                            <div className="row ">                            
-                              <div className="col-3">
-                                <img src={getSelectedDatabaseProviderIcon()} alt={defaultWhenEmpty(state.configuration.databaseProvider, currentDatabaseSettings.databaseProvider)} style={{width: "100%"}} className="database-logo rounded" />
-                              </div>
+	if(!isPageReady() || isSetupComplete)
+		return (
+			<React.Fragment>
+				<Header displayMode={displayMode} translations={translations} />
+				
+				<div className="container-fluid page-content">
+					<div className="row">
+					<div className="main-content text-center col-12 col-sm-12 col-md-10 col-lg-6 col-xl-4 offset-1 offset-sm-2 offset-md-1 offset-lg-3 offset-xl-4">
+						<main>
+						{ isSetupComplete && 
+							<span className="setup-complete-message rounded m-3">{trxService.trx(translations, "setup_is_already_complete")} <Link to="/login">{trxService.trx(translations, "login")}</Link>.</span>
+						}
+						{ (!isSetupComplete && !hasInitialDataLoaded()) && <LoadIndicator size={120} colorClass="primary-color" /> }
+						{ (!isSetupComplete && translations.setup_is_getting_ready_message) && <span>{trxService.trx(translations, "setup_is_getting_ready_message")}</span> }						
+						</main>
+					</div>
+					</div>
+				</div>
+			</React.Fragment>
+		);
 
-                              <div className="col-9">
-                                
-                                {databaseOverrideRequired && <span>Override required.</span>}
-                                
-                                <div className="form-field">
-                                  <label className="visually-hidden" htmlFor="databaseProvider">{trx("database_provider")}</label>
-                                  <FormDropdownBox id="databaseProvider" options={databaseProviderLookup.options} placeholder={trx("database_provider")} value={state.configuration.databaseProvider} sortBy="alpha" onChange={handleDatabaseProviderChange} translations={[]} aria-describedby="databaseProviderHelp" required />
-                                  <div id="databaseProviderHelp" className="visually-hidden">Database help...</div>
-                                </div>
+	const formSectionHeaderClassNames = `form-section-head ${textDirection}`;
+	const formSectionBodyClassNames = `form-section-body ${textDirection}`;
+	const formSectionFooterClassNames = `form-section-foot ${textDirection}`;
 
-                                <div className="row">
-                                  <div className="col-9 form-field">
-                                    <label className="visually-hidden" htmlFor="databaseHost">{trx("address")}</label>
-                                    <input type="text" className="form-control" id="databaseHost" placeholder={trx("address")} value={state.configuration.databaseHost} onChange={handleDatabaseHostChange} autoComplete="off" required />
-                                  </div>
-                                  
-                                  <div className="col-3 form-field">
-                                    <label className="visually-hidden" htmlFor="databaseHostPort">{trx("port")}</label>
-                                    <input type="text" className="form-control" id="databaseHostPort" placeholder={trx("port")} value={state.configuration.databaseHostPort} onChange={handleDatabaseHostPortChange} autoComplete="off" />
-                                  </div>
-                                </div>
+	return (
+		<React.Fragment>
+			<Header displayMode={displayMode} translations={translations} />
+		
+			<div className="container-fluid page-content">
+				<div className="row g-0">
+					<div className="main-content col-12 col-sm-12 col-md-10 col-lg-6 col-xl-4 offset-1 offset-sm-2 offset-md-1 offset-lg-3 offset-xl-4">
+						{ loadStatus === ReadyStatus.Loaded &&	
+						<main>
+							{ currentStep === SetupStep.Language && 								
+								<div className="form-section card rounded">								
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.Welcome, 7)}>
+										<div className={formSectionBodyClassNames}>
+										
+											<div className="form-field">
+												<label className="visually-hidden" htmlFor="languageCode">{trxService.trx(translations, "language")}</label>
+												<FormDropdownBox id="languageCode" options={languages} placeholder="Language" value={calculateDefaultLanguage(languageCode)} sortBy={FormDropdownSortBy.Alphabetical} onChange={handleLanguageCodeChange} translations={[]} aria-describedby="languageCodeHelp" size={3} />
+												<div id="languageCodeHelp" className="visually-hidden">Language help...</div>
+											</div>
 
-                                <div className="row">
-                                  <div className="col-6 form-field">
-                                    <label className="visually-hidden" htmlFor="databaseUsername">{trx("username")}</label>
-                                    <input type="text" className="form-control" id="databaseUsername" placeholder={trx("username")} value={state.configuration.databaseUsername} onChange={handleDatabaseUsernameChange} required autoComplete="off" minLength={minimumUsernameLength} />
-                                    <div className="invalid-feedback">
-                                      Please enter your database username.
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="col-6 form-field">
-                                    <label className="visually-hidden" htmlFor="databasePassword">{trx("password")}</label>
-                                    <input type="password" className="form-control" id="databasePassword" placeholder={trx("password")} value={state.configuration.databasePassword} onChange={handleDatabasePasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
-                                    <div className="invalid-feedback">
-                                      Please enter your database password.
-                                    </div>
-                                  </div>
-                                </div>
+										</div>
 
-                                <div className="form-field">
-                                  <label className="visually-hidden" htmlFor="databaseName">{trx("name")}</label>
-                                  <input type="text" className="form-control" id="databaseName" placeholder={trx("name")} value={state.configuration.databaseName} onChange={handleDatabaseNameChange} autoComplete="off" aria-describedby="databaseNameHelp" />
-                                  <div id="databaseNameHelp" className="visually-hidden">Database Name help...</div>
-                                </div>
-                                
-                              </div>
-                            </div>
+										<div className={formSectionFooterClassNames}>
+											<button type="submit" className="btn btn-sm btn-primary float-end"><Icon name="arrow-right" /></button>
+										</div>
+									</form>
+								</div>
+							}
+							
+							{ currentStep === SetupStep.Welcome && 
+								
+								<div className="form-section card rounded">
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "astrana")} {trxService.trx(translations, "heading_setup_wizard")}</div>
+									
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.TermsAndConditions, 15)}>
+										<div className={formSectionBodyClassNames}>
+										{trxService.trx(translations, "setup_wizard_summary")}
+										</div>
 
-                          </div>
-                                              
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("localization")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            
-                            {databaseConnectionTestResult && <button type="submit" className="btn btn-sm btn-primary btn-next float-end" disabled={databaseConnectionTestStatus === "working"}>Web Server <Icon name="mdi-arrow-right" /></button>}
+										<div className={formSectionFooterClassNames}>
+										<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.Language)} tabIndex={-1}><Icon name="arrow-left" /></button>
+										<button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trxService.trx(translations, "heading_terms_and_conditions")} <Icon name="arrow-right" /></button>
+										</div>
+									</form>						
+								</div>
+							}
 
-                            {databaseConnectionTestStatus === "complete" && 
-                              <button className={`btn btn-sm ${databaseConnectionTestResult ? "btn-outline-success" : "btn-outline-secondary"} float-end me-1`} onClick={() => testDatabaseConnection()} tabIndex={-1}>
-                                {trx("test_connection")}
-                                { databaseConnectionTestResult && <Icon name="ms-1 mdi-check-circle" />}
-                              </button> 
-                            }
-                            
-                            {databaseConnectionTestStatus === "working" && <button className="btn btn-sm btn-outline-secondary btn-next float-end me-1" tabIndex={-1} disabled>
-                                                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                                        <span className="visually-hidden">{trx("testing")}...</span>
-                                                                    </button> 
-                                                                  }                            
-                          </div>
-                        </form>
-                      </div>
-                    }
+							{ currentStep === SetupStep.TermsAndConditions && 
+								
+								<div className="form-section card rounded">
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_terms_and_conditions")}</div>
+									
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.Localization, 26)}>
+										<div className={formSectionBodyClassNames}>
+										<div className="textblock">
+											<ReactMarkdown>{licenseText}</ReactMarkdown>
+										</div>
+										
+										<div className="form-field">
+											<input className="form-check-input me-2" type="checkbox" value="" id="acceptTerms" checked={acceptedTerms} onChange={handleTermsAndConditionsChange} required autoComplete="off" data-lpignore="true" />
+											<label className="form-check-label" htmlFor="acceptTerms"><b>{trxService.trx(translations, "accept_astrana_toc")}</b></label>
+										</div>	
+										</div>
 
-                    { state.currentStep === "webserver" && 
-                      <div className="form-section card rounded">                      
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>Web Server</div>
-                        
-                        <form noValidate onSubmit={(e) => validateForm(e, "usercredentials", 59)}>
-                          <div className={formSectionBodyClassNames}>
-                            
-                            <div className="form-field">
-                              <label className="visually-hidden" htmlFor="databaseProvider">Web Server</label>                              
-                              <div id="databaseProviderHelp" className="visually-hidden">Web Server help...</div>
-                            </div>
+										<div className={formSectionFooterClassNames}>
+										<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.Welcome)} tabIndex={-1}><Icon name="arrow-left" /></button>
+										<button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trxService.trx(translations, "heading_localization")} <Icon name="arrow-right" /></button>
+										</div>
+									</form>
+								</div>
+							}
 
-                            <div className="row ">
-                              <div className="col-9 form-field">
-                                <label className="visually-hidden" htmlFor="databaseHost">Address</label>
-                                <input type="text" className="form-control" id="databaseHost" placeholder="Address" value={state.configuration.databaseHost} onChange={handleDatabaseHostChange} autoComplete="off" />
-                              </div>
-                              
-                              <div className="col-3 form-field">
-                                <label className="visually-hidden" htmlFor="databaseHostPort">Port</label>
-                                <input type="text" className="form-control" id="databaseHostPort" placeholder="Port" value={state.configuration.databaseHostPort} onChange={handleDatabaseHostPortChange} autoComplete="off" />
-                              </div>
-                            </div>
+							{ currentStep === SetupStep.Localization && 
+							
+								<div className="form-section card rounded">						
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_culture_settings")}</div>
+									
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.Database, 37)}>
+										<div className={formSectionBodyClassNames}>
+										
+											<div className="form-field">
+											<label className="visually-hidden" htmlFor="regionCountry">{trxService.trx(translations, "region")} / {trxService.trx(translations, "country")}</label>
+											<FormDropdownBox id="countryCode" options={countries} placeholder={trxService.trx(translations, "region") + "/" + trxService.trx(translations, "country")} value={regionCode} sortBy={FormDropdownSortBy.Alphabetical} onChange={handleRegionCodeChange} translations={[]} aria-describedby="regionRegionHelp" />
+											</div> 
 
-                            <div className="form-field">
-                              <label className="visually-hidden" htmlFor="databaseName">SSL Certificate</label>
-                              <input type="text" className="form-control" id="databaseName" placeholder="SSL Certificate" value={state.configuration.databaseName} onChange={handleDatabaseNameChange} autoComplete="off" aria-describedby="databaseNameHelp" />
-                              <div id="databaseNameHelp" className="visually-hidden">SSL Certificate help...</div>
-                            </div>
-                          </div>
-                                        
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("database")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_user_credentials")} <Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                      </div>
-                    }
+											<div className="form-field">
+											<label className="visually-hidden" htmlFor="timeZone">{trxService.trx(translations, "time_zone")}</label>
+											<input type="text" className="form-control" id="timeZone" placeholder={trxService.trx(translations, "time_zone")} aria-describedby="timeZoneHelp" value={timeZone} onChange={handleTimeZoneChange} />
+											</div>						
+										</div>
 
-                    { state.currentStep === "usercredentials" && 
-                      <div className="form-section card rounded">                          
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("heading_user_credentials")}</div>
-                            
-                        <form noValidate onSubmit={(e) => validateForm(e, "userinformation", 80)}>
-                          <div className={formSectionBodyClassNames}>
-                            
-                            <div className="form-field">
-                              <label className="visually-hidden" htmlFor="username">{trx("username")}</label>
-                              <div className="input-group">
-                                <div className="input-group-text">@</div>
-                                <input type="text" className="form-control" id="username" placeholder={trx("username")} value={state.configuration.username} onChange={handleUsernameChange} aria-describedby="usernameHelp" required autoComplete="off"  />
-                              </div>
-                              <div className="invalid-feedback">
-                                  Please choose a username.
-                                </div>
-                              <div id="usernameHelp" className="visually-hidden">This is the username you'll use to login with.</div>
-                            </div>
+										<div className={formSectionFooterClassNames}>
+										<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.TermsAndConditions)} tabIndex={-1}><Icon name="arrow-left" /></button>
+										<button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trxService.trx(translations, "heading_database")} <Icon name="arrow-right" /></button>
+										</div>
+									</form>
+								</div>
+							}
 
-                            <div className="row ">
-                              <div className="col-6 form-field">
-                                <label className="visually-hidden" htmlFor="password">{trx("password")}</label>
-                                <input type="password" className="form-control" id="password" placeholder={trx("password")} value={state.configuration.password} onChange={handlePasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
-                              </div>
-                              
-                              <div className="col-6 form-field">
-                                <label className="visually-hidden" htmlFor="confirmPassword">{trx("confirm_password")}</label>
-                                <input type="password" className="form-control" id="password" placeholder={trx("confirm_password")} value={state.configuration.confirmPassword} onChange={handleConfirmPasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
-                              </div>
-                            </div>
+							{ currentStep === SetupStep.Database && 
+								<div className="form-section card rounded">
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>
+										<h1>{trxService.trx(translations, "heading_database")}</h1>
+										<span className="advanced-options float-end">
+										<span className="form-check form-switch">
+											<input className="form-check-input" type="checkbox" id="enableDatabaseAdvanvedOptions" />
+											<label className="form-check-label" htmlFor="enableDatabaseAdvanvedOptions">{trxService.trx(translations, "advanced")}</label>
+										</span>
+										</span>
+									</div>
 
-                            <div className="form-field">
-                              <label className="visually-hidden" htmlFor="emailAddress">{trx("email_address")}</label>
-                              <input type="email" className="form-control" id="emailAddress" placeholder={trx("email_address")} value={state.configuration.emailAddress} onChange={handleEmailAddressChange} aria-describedby="emailHelp" autoComplete="off" required />
-                            </div>
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.UserCredentials, 48)}>
+										<div className={formSectionBodyClassNames}>
 
-                            <div className="row form-field">
-                              <div className="input-group">
-                                <label className="visually-hidden" htmlFor="phoneCode">{trx("phone_code")}</label>
-                                <FormComboBox options={phoneCodes} optionPrefix="+" inputClassName="form-control" id="phoneCode" placeholder="Phone Code" defaultValue={defaultPhoneCode} placeholderIcon="https://cdn3.iconfinder.com/data/icons/mission/500/yul754_12_flag_mission_business_logo_hand_silhouette_person-256.png" onChange={handlePhoneCodeChange} onSelect={handlePhoneCodeSelect} aria-describedby="phoneCodeHelp"></FormComboBox>
-                                <label className="visually-hidden" htmlFor="phoneNumber">{trx("phone_number")}</label>
-                                <input type="text" className="form-control" id="phoneNumber" placeholder={trx("phone_number")} value={state.configuration.phoneNumber} onChange={handlePhoneNumberChange} aria-describedby="phoneNumberHelp" />
-                              </div>
-                            </div>
+										<div className="row ">							
+											<div className="col-3">
+											<img src={getSelectedDatabaseProviderIcon()} alt={defaultWhenEmpty(databaseProvider, currentDatabaseSettings.databaseProvider)} style={{width: "100%"}} className="database-logo rounded" />
+											</div>
 
-                          </div>
-                          
-                          <div className={formSectionFooterClassNames}>
-                            <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("webserver")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                            <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_user_information")} <Icon name="mdi-arrow-right" /></button>
-                          </div>
-                        </form>
-                      </div>
-                    }
+											<div className="col-9">
+											
+											{databaseOverrideRequired && <span>Override required.</span>}
+											
+											<div className="form-field">
+												<label className="visually-hidden" htmlFor="databaseProvider">{trxService.trx(translations, "database_provider")}</label>
+												<FormDropdownBox id="databaseProvider" options={databaseProviderLookup.options} placeholder={trxService.trx(translations, "database_provider")} value={databaseProvider} sortBy={FormDropdownSortBy.Alphabetical} onChange={handleDatabaseProviderChange} translations={[]} aria-describedby="databaseProviderHelp" required />
+												<div id="databaseProviderHelp" className="visually-hidden">Database help...</div>
+											</div>
 
-                    { state.currentStep === "userinformation" &&                
-                      <div className="form-section card rounded">                      
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("heading_user_information")}</div>
-                            
-                        <form id="setupForm" noValidate onSubmit={(e) => validateForm(e, "summary", 91)}>   
-                            <div className={formSectionBodyClassNames}>
-                              
-                              <div className="row ">
-                                <div className="col-6 form-field">
-                                  <label className="visually-hidden" htmlFor="firstName">{trx("first_name")}</label>
-                                  <input type="text" className="form-control" id="firstName" placeholder={trx("first_name")} aria-describedby="firstNameHelp" value={state.configuration.firstName} onChange={handleFirstNameChange} autoComplete="off" required />
-                                </div>
-                                
-                                <div className="col-6 form-field">
-                                  <label className="visually-hidden" htmlFor="lastName">{trx("last_name")}</label>
-                                  <input type="text" className="form-control" id="lastName" placeholder={trx("last_name")} aria-describedby="lastNameHelp" value={state.configuration.lastName} onChange={handleLastNameChange} autoComplete="off" required />
-                                </div>
-                              </div>
+											<div className="row">
+												<div className="col-9 form-field">
+												<label className="visually-hidden" htmlFor="databaseHost">{trxService.trx(translations, "address")}</label>
+												<input type="text" className="form-control" id="databaseHost" placeholder={trxService.trx(translations, "address")} value={databaseHost} onChange={handleDatabaseHostChange} autoComplete="off" data-lpignore="true" required />
+												</div>
+												
+												<div className="col-3 form-field">
+												<label className="visually-hidden" htmlFor="databaseHostPort">{trxService.trx(translations, "port")}</label>
+												<input type="text" className="form-control" id="databaseHostPort" placeholder={trxService.trx(translations, "port")} value={databaseHostPort} onChange={handleDatabaseHostPortChange} data-lpignore="true" autoComplete="off" />
+												</div>
+											</div>
 
-                              <div className="row ">
-                                <div className="col-6 form-field">
-                                  <label className="visually-hidden" htmlFor="gender">{trx("gender")}</label>
-                                  <FormDropdownBox id="gender" options={genderLookup.options} placeholder={trx("gender")} value={state.configuration.gender} sortBy="alpha" onChange={handleGenderChange} translations={[]} aria-describedby="genderHelp" autoComplete="off" required />
-                                  <div id="genderNameHelp" className="visually-hidden">Geneder help...</div>
-                                </div>
-                                
-                                <div className="col-6 form-field">
-                                  <label className="visually-hidden" htmlFor="dateOfBirth">{trx("date_of_birth")}</label>
-                                  <div className="input-group">
-                                    <div className="input-group-text">
-                                      <Icon name="mdi-calendar" />
-                                    </div>
-                                    <input type="text" onFocus={(e) => switchFieldType(e, "date")} onBlur={(e) => switchFieldType(e, "text")} className="form-control" id="dateOfBirth" placeholder={trx("date_of_birth")} aria-describedby="dateOfBirthHelp" value={state.configuration.dateOfBirth} onChange={handleDateOfBirthChange} autoComplete="off" required max={today} />
-                                  </div>                          
-                                </div>
-                                
-                              </div>
+											<div className="row">
+												<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="databaseUsername">{trxService.trx(translations, "username")}</label>
+												<input type="text" className="form-control" id="databaseUsername" placeholder={trxService.trx(translations, "username")} value={databaseUsername} onChange={handleDatabaseUsernameChange} required data-lpignore="true" autoComplete="off" minLength={minimumUsernameLength} />
+												<div className="invalid-feedback">
+													Please enter your database username.
+												</div>
+												</div>
+												
+												<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="databasePassword">{trxService.trx(translations, "password")}</label>
+												<input type="password" className="form-control" id="databasePassword" placeholder={trxService.trx(translations, "password")} value={databasePassword} onChange={handleDatabasePasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
+												<div className="invalid-feedback">
+													Please enter your database password.
+												</div>
+												</div>
+											</div>
 
-                            </div>
-                            
-                            <div className={formSectionFooterClassNames}>
-                              <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("usercredentials")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button>
-                              <button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trx("heading_summary")} <Icon name="mdi-arrow-right" /></button>
-                            </div>
-                        </form>
-                      </div>
-                    }
-                    
-                    { state.currentStep === "summary" && 
-                      <div className="form-section card rounded">                      
-                        {progressBarHtml}
-                        <div className={formSectionHeaderClassNames}>{trx("heading_summary")}</div>
+											<div className="form-field">
+												<label className="visually-hidden" htmlFor="databaseName">{trxService.trx(translations, "name")}</label>
+												<input type="text" className="form-control" id="databaseName" placeholder={trxService.trx(translations, "name")} value={databaseName} onChange={handleDatabaseNameChange} autoComplete="off" aria-describedby="databaseNameHelp" />
+												<div id="databaseNameHelp" className="visually-hidden">Database Name help...</div>
+											</div>
+											
+											</div>
+										</div>
 
-                        <form id="setupForm" noValidate onSubmit={handleSubmit}>
-                            <div className={formSectionBodyClassNames}>
-                              <p>This is the summary of configurations choices.</p>
-                              {
-                                (submitResponse.failures ?? []).map((failure: any) => (
-                                  <p>{failure.message}</p>
-                                ))
-                              }
-                            </div>
-                            
-                            <div className={formSectionFooterClassNames}>
-                              {state.installStatus === "gathering" && <button className="btn btn-sm btn-back me-1" onClick={() => goToStep("userinformation")} tabIndex={-1}><Icon name="mdi-arrow-left" /></button> }
-                              {state.installStatus === "gathering" && <input type="submit" className="btn btn-sm btn-primary float-end" value={trx("confirm")} /> }
-                              {state.installStatus === "installing" && <button disabled className="btn btn-sm btn-primary float-end">
-                                                                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                                          <span className="visually-hidden">{trx("configuring")}...</span>
-                                                                      </button> 
-                                                                    }
-                            </div>
-                        </form>
-                      </div>
-                    }
-                </main>
-              }
-            </div>
-          </div>
-        </div>
-      </React.Fragment>
-    );
+										</div>
+															
+										<div className={formSectionFooterClassNames}>
+											<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.Localization)} tabIndex={-1}><Icon name="arrow-left" /></button>
+											
+											{databaseConnectionTestResult && <button type="submit" className="btn btn-sm btn-primary btn-next float-end" disabled={databaseConnectionTestStatus === "working"}>{trxService.trx(translations, "heading_user_credentials")} <Icon name="arrow-right" /></button>}
+
+											{databaseConnectionTestStatus === "complete" && 
+												<button className={`btn btn-sm ${databaseConnectionTestResult ? "btn-outline-success" : "btn-outline-secondary"} float-end me-1`} onClick={() => testDatabaseConnection()} tabIndex={-1}>
+												{trxService.trx(translations, "test_connection")}
+												{ databaseConnectionTestResult && <Icon name="ms-1 check-circle" />}
+												</button> 
+											}
+											
+											{databaseConnectionTestStatus === "working" && <button className="btn btn-sm btn-outline-secondary btn-next float-end me-1" tabIndex={-1} disabled>
+																						<span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+																						<span className="visually-hidden">{trxService.trx(translations, "testing")}...</span>
+																					</button> 
+																					}							
+										</div>
+									</form>
+								</div>
+							}
+
+							{ currentStep === SetupStep.UserCredentials && 
+								<div className="form-section card rounded">							
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_user_credentials")}</div>
+										
+									<form noValidate onSubmit={(e) => validateForm(e, SetupStep.UserInformation, 80)}>
+										<div className={formSectionBodyClassNames}>
+										
+										<div className="form-field">
+											<label className="visually-hidden" htmlFor="username">{trxService.trx(translations, "username")}</label>
+											<div className="input-group">
+											<div className="input-group-text">@</div>
+											<input type="text" className="form-control" id="username" placeholder={trxService.trx(translations, "username")} value={username} onChange={handleUsernameChange} aria-describedby="usernameHelp" required autoComplete="off"	/>
+											</div>
+											<div className="invalid-feedback">
+												Please choose a username.
+											</div>
+											<div id="usernameHelp" className="visually-hidden">This is the username you'll use to login with.</div>
+										</div>
+
+										<div className="row ">
+											<div className="col-6 form-field">
+											<label className="visually-hidden" htmlFor="password">{trxService.trx(translations, "password")}</label>
+											<input type="password" className="form-control" id="password" placeholder={trxService.trx(translations, "password")} value={password} onChange={handlePasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
+											</div>
+											
+											<div className="col-6 form-field">
+											<label className="visually-hidden" htmlFor="confirmPassword">{trxService.trx(translations, "confirm_password")}</label>
+											<input type="password" className="form-control" id="password" placeholder={trxService.trx(translations, "confirm_password")} value={confirmPassword} onChange={handleConfirmPasswordChange} autoComplete="off" required minLength={minimumPasswordLength} />
+											</div>
+										</div>
+
+										<div className="form-field">
+											<label className="visually-hidden" htmlFor="emailAddress">{trxService.trx(translations, "email_address")}</label>
+											<input type="email" className="form-control" id="emailAddress" placeholder={trxService.trx(translations, "email_address")} value={emailAddress} onChange={handleEmailAddressChange} aria-describedby="emailHelp" autoComplete="off" required />
+										</div>
+
+										<div className="row form-field">
+											<div className="input-group">
+												<label className="visually-hidden" htmlFor="phoneCode">{trxService.trx(translations, "phone_code")}</label>
+												<FormComboBox options={phoneCodes} optionPrefix="+" inputClassName="form-control" id="phoneCode" placeholder="Phone Code" defaultValue={defaultPhoneCode} placeholderIcon="https://cdn3.iconfinder.com/data/icons/mission/500/yul754_12_flag_mission_business_logo_hand_silhouette_person-256.png" onChange={handlePhoneCodeChange} onSelect={handlePhoneCodeSelect} aria-describedby="phoneCodeHelp"></FormComboBox>
+												<label className="visually-hidden" htmlFor="phoneNumber">{trxService.trx(translations, "phone_number")}</label>
+												<input type="text" className="form-control" id="phoneNumber" placeholder={trxService.trx(translations, "phone_number")} value={phoneNumber} onChange={handlePhoneNumberChange} aria-describedby="phoneNumberHelp" />
+											</div>
+										</div>
+
+										</div>
+										
+										<div className={formSectionFooterClassNames}>
+											<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.Database)} tabIndex={-1}><Icon name="arrow-left" /></button>
+											<button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trxService.trx(translations, "heading_user_information")} <Icon name="arrow-right" /></button>
+										</div>
+									</form>
+								</div>
+							}
+
+							{ currentStep === SetupStep.UserInformation &&				
+								<div className="form-section card rounded">						
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_user_information")}</div>
+										
+									<form id="setupForm" noValidate onSubmit={(e) => validateForm(e, SetupStep.Summary, 91)}>	 
+										<div className={formSectionBodyClassNames}>
+											
+											<div className="row ">
+											<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="firstName">{trxService.trx(translations, "first_name")}</label>
+												<input type="text" className="form-control" id="firstName" placeholder={trxService.trx(translations, "first_name")} aria-describedby="firstNameHelp" value={firstName} onChange={handleFirstNameChange} autoComplete="off" required />
+											</div>
+											
+											<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="lastName">{trxService.trx(translations, "last_name")}</label>
+												<input type="text" className="form-control" id="lastName" placeholder={trxService.trx(translations, "last_name")} aria-describedby="lastNameHelp" value={lastName} onChange={handleLastNameChange} autoComplete="off" required />
+											</div>
+											</div>
+
+											<div className="row ">
+											<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="gender">{trxService.trx(translations, "gender")}</label>
+												<FormDropdownBox id="gender" options={genderLookup.options} placeholder={trxService.trx(translations, "gender")} value={gender} sortBy={FormDropdownSortBy.Alphabetical} onChange={handleGenderChange} translations={[]} aria-describedby="genderHelp" autoComplete="off" required />
+												<div id="genderNameHelp" className="visually-hidden">Geneder help...</div>
+											</div>
+											
+											<div className="col-6 form-field">
+												<label className="visually-hidden" htmlFor="dateOfBirth">{trxService.trx(translations, "date_of_birth")}</label>
+												<div className="input-group">
+												<div className="input-group-text">
+													<Icon name="calendar" />
+												</div>
+												<input type="text" onFocus={(e) => switchFieldType(e, "date")} onBlur={(e) => switchFieldType(e, "text")} className="form-control" id="dateOfBirth" placeholder={trxService.trx(translations, "date_of_birth")} aria-describedby="dateOfBirthHelp" value={dateOfBirth} onChange={handleDateOfBirthChange} autoComplete="off" required max={today} />
+												</div>							
+											</div>
+											
+											</div>
+
+										</div>
+										
+										<div className={formSectionFooterClassNames}>
+											<button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.UserCredentials)} tabIndex={-1}><Icon name="arrow-left" /></button>
+											<button type="submit" className="btn btn-sm btn-primary btn-next float-end">{trxService.trx(translations, "heading_summary")} <Icon name="arrow-right" /></button>
+										</div>
+									</form>
+								</div>
+							}
+							
+							{ currentStep === SetupStep.Summary && 
+								<div className="form-section card rounded">						
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_summary")}</div>
+
+									<form id="setupForm" noValidate onSubmit={handleSubmit}>
+										<div className={formSectionBodyClassNames}>
+											<p>This is the summary of configurations choices.</p>
+											{
+											(submitResponse.failures ?? []).map((failure: any) => (
+												<p>{failure.message}</p>
+											))
+											}
+										</div>
+										
+										<div className={formSectionFooterClassNames}>
+											{installStatus === InstallStatus.GatheringDetails && <button className="btn btn-sm btn-back me-1" onClick={() => goToStep(SetupStep.UserInformation)} tabIndex={-1}><Icon name="arrow-left" /></button> }
+											{installStatus === InstallStatus.GatheringDetails && <input type="submit" className="btn btn-sm btn-primary float-end" value={trxService.trx(translations, "confirm")} /> }
+											{installStatus === InstallStatus.Installing && <button disabled className="btn btn-sm btn-primary float-end">
+																						<span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+																						<span className="visually-hidden">{trxService.trx(translations, "configuring")}...</span>
+																					</button> 
+																				}
+										</div>
+									</form>
+								</div>
+							}
+
+							{ currentStep === SetupStep.Finished && 
+								<div className="form-section card rounded">
+									{progressBarHtml}
+									<div className={formSectionHeaderClassNames}>{trxService.trx(translations, "heading_setup_finished")}</div>
+									<div className={formSectionBodyClassNames}>
+										<p>{trxService.trx(translations, "setup_completed_message")}</p>
+									</div>
+									{ currentStep === SetupStep.Finished && <Fireworks timeout={15} /> }
+									
+									<div className={formSectionFooterClassNames}>
+										{installStatus === InstallStatus.Complete && <Link to="/login" className="btn btn-sm btn-primary">{trxService.trx(translations, "login")}</Link> }
+									</div>
+								</div>
+							}	
+						</main>
+						}
+					</div>
+				</div>
+			</div>
+		</React.Fragment>
+	);
 };

@@ -1,231 +1,293 @@
 import React from 'react';
+import _ from 'lodash';
 
+import { DisplayMode } from '../../types/enums/displayMode';
+import { ImageLoadStatus } from '../../types/enums/imageLoadStatus';
+import { MediaType } from '../../types/enums/mediaType';
+
+import UrlBuilderService from '../../services/UrlBuilderService';
+
+import { Link } from 'react-router-dom';
 import { LoadIndicator } from './../../components/LoadIndicator';
 
 import "./Image.scss";
 
 export interface IImageState {
-    imageElement?: any; 
-    location?: string;
-    caption?: string;
-    imageLoadStatus: string;
-    stretch?: boolean;
-    marginTop: number;
-    marginLeft: number;
-    maximumHeight: number;
-    stretchWidth?: number;
-    resizing: boolean;
+	imageElement?: any; 
+	loadStatus: ImageLoadStatus;
+	stretch?: boolean;
+	marginTop: number;
+	marginLeft: number;
+	maximumHeight: number;
+	stretchWidth?: number;
+	resizing: boolean;
+	showModifyControl?: boolean;
+	modifyHandler?: Function;
+	showRemoveControl?: boolean;
+	removeHandler?: Function;
+	className?: string;
+	overlayText?: string;
 }
 
-export function Image(this: any, props: { 
-    id?: string; 
-    location: string; 
-    caption?: string, 
-    stretch?: boolean, 
-    maximumHeight?: number, 
-    onImageLoad?: Function 
+export function Image(this: any, props: {
+	displayMode?: DisplayMode;
+	id?: string; 
+	location: string; 
+	caption?: string;
+	stretch?: boolean;
+	fit?: "cover" | "contain";
+	width?: number;
+	widthUnit?: string;
+	height?: number; 
+	maximumHeight?: number; 
+	onImageLoad?: Function;
+	preload?: boolean;
+	showModifyControl?: boolean;
+	modifyHandler?: Function;
+	showRemoveControl?: boolean;
+	removeHandler?: Function;
+	cssClassNames?: string;
+	backgroundColor?: string;
+	overlayText?: string;
+	altText?: string;
+	enableViewer?: boolean;
+	setId?: string;
 }) 
 {
-    const defaultMaximumHeight = 304;
-    const placeholderImageLocation = "/images/placeholder.png";
+	const namespaceClassName = "image";
 
-    const intialState = { 
-        imageElement: undefined, 
-        location: props.location ?? "", 
-        caption: props.caption ?? "", 
-        imageLoadStatus: "loading" , 
-        stretch: props.stretch ?? false,
-        marginTop: 0,
-        marginLeft: 0,
-        maximumHeight: props.maximumHeight ?? defaultMaximumHeight,
-        stretchWidth: undefined,
-        resizing: false
-    };
-    
-    const [state, setState] = React.useState<IImageState>(intialState);
+	const urlBuilder = UrlBuilderService();
 
-    const getCurrentState = function()
-    {
-        return JSON.parse(JSON.stringify(state));
-    }
+	const defaultMaximumHeight = 304;
+	const placeholderImageLocation = "/images/placeholder.png";
 
-    let cssClasses = "image";
+	const intialState = { 
+		imageElement: undefined, 
+		loadStatus: props.preload ? ImageLoadStatus.Loading : ImageLoadStatus.Loaded, 
+		stretch: props.stretch ?? false,
+		marginTop: 0,
+		marginLeft: 0,
+		maximumHeight: props.maximumHeight ?? defaultMaximumHeight,
+		stretchWidth: undefined,
+		resizing: false
+	};
+	
+	const [state, setState] = React.useState<IImageState>(intialState);
 
-    if(props.stretch)
-    {
-        cssClasses += " stretch";
-    }
+	const cssClasses: string[] = [namespaceClassName];
 
-    const location = state.location ? state.location : placeholderImageLocation;
-    const altText = state.caption ? "Image" : state.caption;
-    
-    function resetElementWidthAndHeight(element: any)
-    {
-        if(!element || !element.style)
-            return;
+	if(props.stretch)
+		cssClasses.push("stretch");
 
-        element.style.width = null;
-        element.style.height = null;
-    }
 
-    function setMargins(element: any, state: IImageState)
-    {
-        if(!element || !state)
-            return;
+	if(props.cssClassNames)
+		cssClasses.push(props.cssClassNames);
 
-        if(!element.naturalWidth || !element.naturalHeight)
-            return;
+	const location = props.location ? props.location : placeholderImageLocation;
+	const altText = props.altText ? props.altText : props.caption ? props.caption : "Image";
+	
+	function resetElementWidthAndHeight(element: any)
+	{
+		if(!element || !element.style)
+			return;
 
-        if(!element.clientWidth || !element.clientHeight)
-            return;
+		element.style.width = null;
+		element.style.height = null;
+	}
 
-        if(!element.parentElement.clientWidth || !element.parentElement.clientHeight)
-            return;
+	function calculateMargins(element: any, state: IImageState)
+	{
+		if(!element || !state)
+			return;
 
-        const ratio = element.naturalWidth / element.naturalHeight;
+		if(!element.naturalWidth || !element.naturalHeight)
+			return;
 
-        const iDims = { w: element.clientWidth, h: element.clientHeight };
-        const oDims = { w: element.parentElement.clientWidth, h: element.parentElement.clientHeight };
-        
-        const heightDifference = oDims.h - iDims.h;
-        
-        state.marginTop = 0;
-        state.marginLeft = 0;
+		if(!element.clientWidth || !element.clientHeight)
+			return;
 
-        if(heightDifference < 0)
-        {
-            state.marginTop = (heightDifference / 2);
-        }
-        else if(heightDifference > 0)
-        {
-            let heightGapPercentage = 100 - Math.floor(((oDims.h - heightDifference)/oDims.h) * 100);
-            let newWidthFactor = (100 + heightGapPercentage)/100;
+		if(!element.parentElement.clientWidth || !element.parentElement.clientHeight)
+			return;
 
-            const newHeight  = iDims.h * newWidthFactor;
+		const ratio = element.naturalWidth / element.naturalHeight;
 
-            if(newHeight < oDims.h)
-            {
-                const newHeightDifference = oDims.h - newHeight;
+		const iDims = { w: element.clientWidth, h: element.clientHeight };
+		const oDims = { w: element.parentElement.clientWidth, h: element.parentElement.clientHeight };
+		
+		const heightDifference = oDims.h - iDims.h;
+		
+		state.marginTop = 0;
+		state.marginLeft = 0;
 
-                heightGapPercentage += 104 - Math.ceil(((oDims.h - newHeightDifference)/oDims.h) * 100);
-                newWidthFactor = (100 + heightGapPercentage)/100;
-            }
+		if(heightDifference < 0)
+		{
+			state.marginTop = (heightDifference / 2);
+		}
+		else if(heightDifference > 0)
+		{
+			let heightGapPercentage = 100 - Math.floor(((oDims.h - heightDifference)/oDims.h) * 100);
+			let newWidthFactor = (100 + heightGapPercentage)/100;
 
-            const newWidth = Math.ceil(oDims.w * newWidthFactor);
-            
-            if(props.id && props.id == "4")
-            {
-                console.log(element.src);
-                
-                console.log("heightDiff: " + heightDifference);
-        
-                console.log(`p=[w:${oDims.w}, h:${oDims.h}]`);
-                console.log(`i=[w:${iDims.w}, h:${iDims.h}]`);
-                console.log("newHeight: " + newHeight);
+			const newHeight  = iDims.h * newWidthFactor;
 
-                console.log("heightGapPercentage: " + heightGapPercentage + "%");
-                console.log("newWidthFactor: " + newWidthFactor);
-                console.log("newWidth: " + newWidth + " {" + oDims.w + "}");
+			if(newHeight < oDims.h)
+			{
+				const newHeightDifference = oDims.h - newHeight;
 
-                if(true)
-                {
-                    console.log(iDims.h * newWidthFactor);
-                }
-            }
+				heightGapPercentage += 104 - Math.ceil(((oDims.h - newHeightDifference)/oDims.h) * 100);
+				newWidthFactor = (100 + heightGapPercentage)/100;
+			}
 
-            state.stretchWidth = newWidth;
+			const newWidth = Math.ceil(oDims.w * newWidthFactor);
+			
+			state.stretchWidth = newWidth;
 
-            if(ratio > 1)
-            {
-                state.marginLeft = (oDims.w - newWidth) / 2;
-            }
-        }
-    }
+			if(ratio > 1)
+			{
+				state.marginLeft = (oDims.w - newWidth) / 2;
+			}
+		}
+	}
 
-    function handleImageLoaded(e: any) 
-    {
-        if(typeof(props.onImageLoad) === "function")
-        {
-            props.onImageLoad(e.target);
-        }
+	function handleImageLoaded(e: any) 
+	{
+		if(typeof(props.onImageLoad) === "function")
+		{
+			props.onImageLoad(e.target);
+		}
 
-        const newState = getCurrentState();
+		setState(state => {
 
-        if(e && e.target)
-        {
-            newState.imageElement = e.target;
+			if(e && e.target)
+			{
+				state.imageElement = e.target;
+				state.loadStatus = ImageLoadStatus.Loaded;
+				
+				resetElementWidthAndHeight(e.target);
+				calculateMargins(e.target, state);
+			}
+			else
+				state.loadStatus = ImageLoadStatus.Error;
+	
+			return state;
+		});
+	}
 
-            newState.imageLoadStatus = "loaded";
-            
-            resetElementWidthAndHeight(e.target);
-            setMargins(e.target, newState);
-        }
-        else
-            newState.imageLoadStatus = "failed";
-        
-        setState(newState);
-    }
+	function handleImageErrored(e: any) 
+	{
+		setState(state => {
 
-    function handleImageErrored(e: any) 
-    {
-        const newState = getCurrentState();
+			state.loadStatus= ImageLoadStatus.Error;
+		
+			if(e && e.target)
+			{
+				state.imageElement = e.target;
+			}
+	
+			return state;
+		});
+	}
 
-        newState.imageLoadStatus= "failed";
-        
-        if(e && e.target)
-        {
-            newState.imageElement = e.target;
-        }
+	const imageContainerStyle: any = { };
+	const imageStyle: any = { };
 
-        setState(newState);
-    }
+	if(props.width)
+	{
+		imageContainerStyle.width = props.widthUnit ? props.width + props.widthUnit : props.width + "px";
+		imageStyle.width = props.widthUnit ? props.width + props.widthUnit : props.width + "px";
+	}
 
-    const imageStyle: any = {
-        
-    };
+	if(props.height)
+	{
+		imageContainerStyle.height = _.isNumber(props.height) ? props.height + "px" : props.height;
+		imageStyle.height = _.isNumber(props.height) ? props.height + "px" : props.height;
+	}
 
-    if(state.imageLoadStatus == "loading")
-    {
-        imageStyle.width = "1px";
-        imageStyle.height = "1px";
-        imageStyle.position = "absolute";
-        imageStyle.top = "0px";
-        imageStyle.left = "0px";
-    }
+	if(props.preload)
+	{
+		if(state.loadStatus === ImageLoadStatus.Loading)
+		{
+			imageStyle.width = "1px";
+			imageStyle.height = "1px";
+			imageStyle.position = "absolute";
+			imageStyle.top = "0px";
+			imageStyle.left = "0px";
+		}
+	}
 
-    if(state.stretch)
-    {
-        imageStyle.marginTop = state.marginTop + "px";
-        imageStyle.marginLeft = state.marginLeft + "px";
+	if(state.stretch)
+	{
+		imageStyle.marginTop = state.marginTop + "px";
+		imageStyle.marginLeft = state.marginLeft + "px";
 
-        if(state.stretchWidth && state.stretchWidth > 0)
-        {
-            imageStyle.width = state.stretchWidth + "px";
-            imageStyle.maxWidth = state.stretchWidth + "px";
-        }
-    }
+		if(state.stretchWidth && state.stretchWidth > 0)
+		{
+			imageStyle.width = state.stretchWidth + "px";
+			imageStyle.maxWidth = state.stretchWidth + "px";
+		}
+	}
 
-    let imageComponent;
-    
-    if (state.imageLoadStatus == "loaded")
-    {
-        imageComponent = <img src={location} alt={altText} style={imageStyle} />;
-    } 
-    else if (state.imageLoadStatus == "failed") 
-    {
-        imageComponent = <i className="">Load Failed</i>;
-    } 
-    else 
-    {
-        imageComponent = <React.Fragment>
-            <LoadIndicator color="#ff0000" />
-            <img src={location} alt={altText} onLoad={handleImageLoaded.bind(this)} onError={handleImageErrored.bind(this)} style={imageStyle} />
-        </React.Fragment>;
-    }
+	if(!props.fit || props.fit === "cover")
+	{
+		imageStyle.objectFit = "cover";
+	}
+	else if(props.fit === "contain")
+	{
+		imageStyle.objectFit = "contain";
+	}
 
-    return (
-        <div className={cssClasses}>          
-            { imageComponent }            
-        </div>
-    );
+	if(props.backgroundColor && !_.isEmpty(props.backgroundColor))
+	{
+		imageContainerStyle.backgroundColor = props.backgroundColor;
+	}
+
+	let imageComponent;
+	
+	if(props.displayMode === DisplayMode.Working)
+	{
+		imageComponent = <React.Fragment>
+			<span className="center"><LoadIndicator color="#999" size={50} /></span>
+		</React.Fragment>;
+	}
+	else
+	{
+		if (state.loadStatus === ImageLoadStatus.Loaded)
+		{
+			imageComponent = <img src={location} alt={altText} style={imageStyle} />;
+		} 
+		else if (state.loadStatus === ImageLoadStatus.Error) 
+		{
+			imageComponent = <i className="">Load Failed</i>;
+		} 
+		else 
+		{
+			imageComponent = <React.Fragment>
+				<span className="center"><LoadIndicator color="#999" size={50} /></span>
+				<img src={location} alt={altText} onLoad={handleImageLoaded.bind(this)} onError={handleImageErrored.bind(this)} style={imageStyle} />
+			</React.Fragment>;
+		}
+	}
+	
+	if(props.enableViewer === true)
+	{
+		const linkUrl = props.id && !_.isEmpty(props.id) ? urlBuilder.pictureUrl(props.id, props.setId) : props.location ?? "";
+
+		imageComponent = <Link to={linkUrl} state={{backUrl: window.location.toString(), itemUrl: props.location, itemMediaType: MediaType.Image }}>{imageComponent}</Link>
+	}
+	
+	if(props.overlayText && !_.isEmpty(props.overlayText))
+	{
+		return (
+			<div className={cssClasses.join(" ")} style={imageContainerStyle}>
+				<div className={`${namespaceClassName}-text-overlay`}><span className={`${namespaceClassName}-text-overlay-content`}>{ props.overlayText }</span></div>
+				{ imageComponent }
+			</div>
+		);
+	}
+
+	return (
+		<div className={cssClasses.join(" ")} style={imageContainerStyle}>
+			{ imageComponent }
+		</div>
+	);
 };

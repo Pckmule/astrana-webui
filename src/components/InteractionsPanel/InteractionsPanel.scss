@@ -1,0 +1,137 @@
+@import "./../../../src/themes/constants.scss";
+
+.content-items-interactions
+{
+	position: relative;
+	display: block;
+	width: 100%;
+	overflow: hidden;
+	border-top:1px solid #ddd;
+
+	.content-items-interactions-details
+	{
+		position: relative;
+		display: flex;
+		width: 100%;
+		overflow: hidden;
+		padding: 0.25rem;
+		font-size: 0.8rem;
+		user-select: none;
+		
+		.count
+		{
+			position: relative;
+			display: block;
+			align-items: center;
+			flex-basis: 0;
+			min-width: 0;
+			padding: 0.5rem;
+			user-select: none;
+		}
+
+		.count.reactions-count
+		{
+			align-self: flex-start;
+			flex: auto;
+			user-select: none;
+		}
+
+		.comments-count
+		{
+			display: block;
+			align-self: flex-end;
+			text-align: right;
+			flex: initial;
+			user-select: none;
+		}
+
+		.shares-count
+		{
+			display: block;
+			align-self: flex-end;
+			text-align: right;
+			flex: initial;
+			user-select: none;
+		}
+
+		.link
+		{
+			cursor: pointer;
+		}
+
+		.link:hover
+		{
+			text-decoration: underline;
+		}
+	}
+
+	.content-items-interactions-actions
+	{
+		border-top:1px solid #ddd;
+		position: relative;
+		display: flex;
+		width: 100%;
+		overflow: hidden;
+		flex-direction: row;
+		padding: 0.25rem;
+		user-select: none;
+		
+		.action
+		{
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-grow: 1;
+			flex-basis: 0;
+			min-width: 0;
+			padding: 0.5rem;
+			text-align: center;
+			border-radius: 5px;
+			user-select: none;
+			cursor: pointer;
+
+			span
+			{
+				user-select: none;
+				align-items: center;
+			}
+
+			i
+			{
+				user-select: none;
+				align-items: center;
+				font-size: 1.25rem;
+			}
+		}
+
+		.action:hover
+		{
+			background-color: #eee;
+		}
+
+		.action:active
+		{
+			background-color: #eef;
+		}
+	}
+	 
+	.content-items-interactions-comments
+	{
+		position: relative;
+		display: block;
+		width: 100%;
+		overflow: hidden;
+		border-top:1px solid #ddd;
+
+		.content-items-interactions-comments-thread
+		{
+			position: relative;
+			display: flex;
+			width: 100%;
+			overflow: hidden;
+			padding: 0.75rem;
+			font-size: 1em;
+		}
+	}
+}

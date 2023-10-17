@@ -81,7 +81,7 @@ export interface IQueryParameter {
     value: string | number;
 }
 
-export interface IFeedItem {
+export interface IProfilePostItem {
     id: string;
     peerName: string;
     peerPictureUrl: null | string;
@@ -89,18 +89,9 @@ export interface IFeedItem {
     text: string;
     attachmentId?: null | string;
     createdTimestamp: string;
-    locationId?: null | string;
-    getData?: null |string;
-}
-
-export interface ProfilePostItem {
-    id: string;
-    peerName: string;
-    peerPictureUrl: null | string;
-    profileUrl: string;
-    text: string;
-    attachmentId?: null | string;
-    createdTimestamp: string;
+    createdById: string;
+    createdByName: string;
+    createdByGender?: number;
     locationId?: null | string;
     getData?: null |string;
 }

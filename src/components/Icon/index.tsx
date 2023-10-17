@@ -1,61 +1,63 @@
-import React from 'react';
+import _ from "lodash";
 
 import "material-design-icons/iconfont/material-icons.css";
 import "@mdi/font/scss/materialdesignicons.scss"
 
+import { DisplayMode } from "../../types/enums/displayMode";
+
 import "./Icon.scss";
 
-export interface IIconState {
-    name: string;
-    size?: number;
-    marginLeft?: number;
-    marginRight?: number;
-    library?: string;
-}
-
 export function Icon(props: { 
+    displayMode?: DisplayMode;
     name: string; 
     size?: number;
-    marginLeft?: number;
-    marginRight?: number;
-    library?: string; 
+    marginStart?: number;
+    marginEnd?: number; 
+    library?: string;
+    align?: "start" | "end" | undefined;
+    altText?: string;
+    description?: string;
+    className?: string;
 }) 
 {
-    const intialState = { 
-        library: props.library ?? "mdi",
-        name: props.name ?? "info", 
-        size: props.size ?? 16, 
-        marginLeft: props.marginLeft ?? undefined, 
-        marginRight: props.marginRight ?? undefined
-    };
+    const name = props.name ?? "info";
+    const library = props.library ?? "mdi";
+    const align = props.align ?? undefined;
+    const size = props.size ?? 16;
+    const marginStart = props.marginStart ?? undefined;
+    const marginEnd = props.marginEnd ?? undefined;
+    const altText = props.altText ?? name;
     
-    const [state, setState] = React.useState<IIconState>(intialState);
+    const cssClasses: string[] = ["icon"];
 
-    const getCurrentState = function()
-    {
-        return JSON.parse(JSON.stringify(state));
-    }
+    (library === "material") ? cssClasses.push("material-icons") : cssClasses.push("mdi");    
 
-    let cssClasses = "icon";
+    if(marginStart && marginStart > -1)
+        cssClasses.push("ms-" + marginStart);
 
-    if(state.library === "material")
-    {
-        cssClasses += " material-icons";
-    }
-    else
-    {
-        cssClasses += " mdi";
-    }
-
-    if(state.marginLeft && state.marginLeft > -1)
-        cssClasses += " ml-" + state.marginLeft;
-
-    if(state.marginRight && state.marginRight > -1)
-        cssClasses += " me-" + state.marginRight;
+    if(marginEnd && marginEnd > -1)
+        cssClasses.push("me-" + marginEnd);
     
+    if(library === "mdi")
+        cssClasses.push("mdi-" + name);
+    else if(library !== "material")
+        cssClasses.push(name);
+    
+    if(align === "start")
+        cssClasses.push("float-start");
+
+    if(align === "end")
+        cssClasses.push("float-end");
+
+    if(props.displayMode === DisplayMode.Stencil)
+        cssClasses.push("rounded");
+
+    if(props.className && !_.isEmpty(props.className))
+        cssClasses.push(props.className);
+
     return (
-        (state.library === "material") ? 
-            <i className={cssClasses}>{state.name}</i> : 
-            <i className={cssClasses + " " + state.name} aria-hidden="true"></i>
+        (library === "material") ? 
+            <i className={cssClasses.join(" ")} aria-description={props.description} aria-roledescription="icon" aria-label={altText}>{name}</i> : 
+            <i className={cssClasses.join(" ")} aria-description={props.description}  aria-roledescription="icon" aria-hidden="true" aria-label={altText}></i>
     );
 };

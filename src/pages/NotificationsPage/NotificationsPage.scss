@@ -1,0 +1,25 @@
+@import "./../../../src/themes/constants.scss";
+
+.notifications-card
+{
+	display:block;
+	overflow: hidden;
+	width:100%;
+	background-color: #fff;
+	text-align: center;
+	border: 1px solid $border-color-gray;
+
+	.notifications-card-body
+	{
+		padding: 0 0 15px 0;
+	}
+}
+
+.notifications-card.stencil
+{
+	.notifications-card-head,
+	.notifications-card-body
+	{
+		visibility: hidden;
+	}
+}

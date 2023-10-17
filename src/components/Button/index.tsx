@@ -1,48 +1,81 @@
-import React from 'react';
-import './button.css';
+import _ from "lodash";
 
-interface ButtonProps {
-  /**
-   * Is this the principal call to action on the page?
-   */
-  primary?: boolean;
-  /**
-   * What background color to use
-   */
-  backgroundColor?: string;
-  /**
-   * How large should the button be?
-   */
-  size?: 'small' | 'medium' | 'large';
-  /**
-   * Button contents
-   */
-  label: string;
-  /**
-   * Optional click handler
-   */
-  onClick?: () => void;
+import { DisplayMode } from '../../types/enums/displayMode';
+
+import { Icon } from "../Icon";
+
+import "./Button.scss";
+
+interface IButtonProps 
+{
+	displayMode?: DisplayMode;
+	label?: string;
+	iconName?: string;
+	theme?: "default" | "light" | "dark";
+	hierarchy?: "primary" | "secondary" | "tertiary";
+	size?: "small" | "medium" | "large";
+	disabled?: boolean;
+	description?: string;
+	onClick?: () => void;
+	cssClassNames?: string;
 }
 
-/**
- * Primary UI component for user interaction
- */
-export const Button = ({
-  primary = false,
-  size = 'medium',
-  backgroundColor,
-  label,
-  ...props
-}: ButtonProps) => {
-  const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
-  return (
-    <button
-      type="button"
-      className={['storybook-button', `storybook-button--${size}`, mode].join(' ')}
-      style={{ backgroundColor }}
-      {...props}
-    >
-      {label}
-    </button>
-  );
+export const Button = ({ displayMode, label, iconName, description, hierarchy = "secondary", theme = "default", size = "small", disabled, onClick, cssClassNames }: IButtonProps) => 
+{
+	const primaryButtonClassName = "btn-primary";
+	const secondaryButtonClassName = "btn-secondary";
+	const tertiaryButtonClassName = "btn-primary";
+
+	const handleClick = () => 
+	{ 
+		if(onClick && typeof(onClick) === "function")
+			onClick();
+	};
+
+	const cssClasses: string[] = ["btn"];
+
+	if(size === "small")
+		cssClasses.push("btn-sm");
+	
+	if(size === "large")
+		cssClasses.push("btn-lg");
+
+	if(cssClassNames && !_.isEmpty(cssClassNames))
+		cssClasses.push(cssClassNames);
+
+	if(displayMode === DisplayMode.Stencil)
+	{
+		cssClasses.push("btn-placeholder");
+	}
+
+	if(hierarchy === "primary")
+	{
+		cssClasses.push(primaryButtonClassName);
+	}
+	else if(hierarchy === "secondary")
+	{
+		cssClasses.push(secondaryButtonClassName);
+	}
+	
+	const buttonLabel = label;
+	const buttonIconName = iconName || !_.isEmpty(iconName) ? iconName : "";
+	const buttonIconDescription= !buttonLabel || _.isEmpty(buttonLabel) ? buttonIconName : buttonLabel;
+	const buttonIconMargin = !buttonLabel || _.isEmpty(buttonLabel) ? 0 : 2;
+	
+	if(displayMode === DisplayMode.Stencil)
+	{
+		return (
+			<button type="button" className={cssClasses.join(" ")} disabled={true}>
+				{ buttonIconName && !_.isEmpty(buttonIconName) && <Icon name={buttonIconName} description={buttonIconDescription} marginEnd={buttonIconMargin} /> }
+				{ buttonLabel && !_.isEmpty(buttonLabel) && <span className="text-placeholder" style={{ width: "80px" }}>&nbsp;</span> }
+			</button>
+		);
+	}
+
+	return (
+		<button type="button" className={cssClasses.join(" ")} onClick={handleClick} disabled={disabled}>
+			{ iconName && !_.isEmpty(iconName) && <Icon name={iconName} description={buttonIconDescription} marginEnd={buttonIconMargin} /> }
+			{ buttonLabel && !_.isEmpty(buttonLabel) ? buttonLabel : undefined }
+		</button>
+	);
 };

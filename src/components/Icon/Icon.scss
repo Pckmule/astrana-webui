@@ -1,4 +1,17 @@
+@import "./../../../src/themes/constants.scss";
+
 i.icon
 {
     display: inline-block;
+    line-height: 1;
+}
+.stencil 
+{
+    i.icon
+    {
+        display: inline-block;
+        line-height: 1;
+        color: transparent !important;
+        background-color: $color-lightgray;
+    }
 }

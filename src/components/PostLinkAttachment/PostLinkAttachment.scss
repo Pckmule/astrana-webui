@@ -1,0 +1,93 @@
+@import "./../../../src/themes/constants.scss";
+
+.post-attachment-link
+{
+    display: block;
+    width:100%;
+    max-height: 540px;
+    overflow: hidden;
+    padding:0;
+    margin:0;
+    background-color: $color-lightergray;
+    
+    a
+    {
+        color: inherit;
+        font-weight: inherit;
+        cursor: pointer;
+    }
+
+    a:hover
+    {
+        color: inherit;
+        font-weight: inherit;
+        text-decoration: none;
+    }
+
+    .post-attachment-link-generating-preview
+    {
+        display: block;
+        height: 80px;
+        padding:0.75rem 1rem 0.25rem 1rem;
+        text-decoration: none;
+        text-align: center;
+
+        .post-attachment-link-generating-preview-message
+        {
+            display:inline;
+            vertical-align: middle;
+            font-size: 1.5rem;
+            color: $color-gray
+        }
+    }
+
+    .post-attachment-link-image
+    {
+        display: block;
+        margin: 0;
+        max-height: 400px;
+        border-bottom:1px solid #ddd;
+    }
+
+    .post-attachment-link-text
+    {
+        display: block;
+        max-height: 150px;
+        padding:0.75rem 1rem 0.75rem 1rem;
+        text-decoration: none;
+    
+        span
+        {
+            text-decoration: none;
+        }
+
+        .post-attachment-link-title
+        {
+            display: block;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .post-attachment-link-url
+        {
+            display: block;
+            font-size: 0.7rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            text-decoration: none;
+
+        }
+
+        .post-attachment-link-description
+        {
+            display: block;
+            padding: 0.5rem 0 0 0;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space:normal;
+            text-decoration: none;
+        }
+    }
+
+}
